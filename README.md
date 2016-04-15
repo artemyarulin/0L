@@ -42,6 +42,7 @@ As this concept has no value on small examples, we are going to implement fully-
   - [ ] Common solution and approaches in AI field
     - [x] Rule based approach and expert system looks interesting
     - [x] Goal oriented action planning - can we express domain as a set of goals/actions and constraints?
+    - [ ] [Coeffects](http://tomasp.net/coeffects/). Looks interesting
     - [ ] Logic programming and [core.logic](https://github.com/clojure/core.logic) looks interesting. But overall this is just depth-first search? [Prolog Programming for Artificial Intelligence](http://www.amazon.com/dp/0201403757/) probably has an answer
 - [ ] Implementation
   - [ ] UI-less engine
@@ -49,11 +50,14 @@ As this concept has no value on small examples, we are going to implement fully-
 - [ ] Proof
   - [ ] Benchmarks
 
+[thoughts flow](thoughts.md)
+
 ## References
 
 Important papers:
 - [Applying Goal-Oriented Action Planning to Games](http://alumni.media.mit.edu/~jorkin/GOAP_draft_AIWisdom2_2003.pdf)
 - [Experience with Rules-Based Programming for Distributed, Concurrent, Fault-Tolerant Code](http://web.stanford.edu/~ouster/cgi-bin/papers/rules-atc15)
+- [Computer Architecture Lecture 24: Prefetching](http://www.ece.cmu.edu/~ece740/f11/lib/exe/fetch.php%3Fmedia%3Dwiki:lectures:onur-740-fall11-lecture24-prefetching-afterlecture.pdf)
 
 Articles:
 - [Why not events](https://awelonblue.wordpress.com/2012/07/01/why-not-events/)
