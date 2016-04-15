@@ -54,7 +54,9 @@ As this concept has no value on small examples, we are going to implement fully-
 Important papers:
 - [Applying Goal-Oriented Action Planning to Games](http://alumni.media.mit.edu/~jorkin/GOAP_draft_AIWisdom2_2003.pdf)
 - [Experience with Rules-Based Programming for Distributed, Concurrent, Fault-Tolerant Code](http://web.stanford.edu/~ouster/cgi-bin/papers/rules-atc15)
+
 Articles:
 - [Why not events](https://awelonblue.wordpress.com/2012/07/01/why-not-events/)
+
 Books:
 - [Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp](http://www.amazon.com/Paradigms-Artificial-Intelligence-Programming-Studies/dp/1558601910)
