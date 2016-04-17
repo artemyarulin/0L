@@ -46,3 +46,4 @@ speed
 - We should split atom into three: `data`, `ui`, `io` for the performance reasons. We don't want to create whole `data` atom copy when user has scrolled and changed `ui` state
 - No state, but rather **states**:
 ![states](images/states.png)
+- Reason why we've descibed state of the world in general (and `io` in particular) as data because we can process it. We should use data for the rules as well, in case we would like to introduce some self-inspection (e.g. rules analyze other rules). It's an only way how to acheive prediction. We have state history so we can go back, and we have to have rules as data so we can go into feature.
