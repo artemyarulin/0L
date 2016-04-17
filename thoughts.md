@@ -30,7 +30,7 @@ This concept allow to do a lot of interesting and powerful stuff.
 
 #### 2016-04-17 Sun
 
-- If we would provide automatic solution, then control would be lost, which means it wouldn't work in every case (most likely otherwise - it **would work** with just a few cases). General solution would be to provide a language where every case could be described. This our goal
+- If we would provide automatic solution, then control would be lost, which means it wouldn't work in every case (most likely otherwise - it **would work** with just a few cases). General solution would be to provide a language where every case could be described. This is our goal
 - Example application idea: Counter + save number on disk, where IO takes 1 second. Can we express requirements like:
   - IO is expensive and we should minimize it (throttling)
   - IO is free, can we achieve latency zero? Pre-save
@@ -44,3 +44,5 @@ let speed x y =
 speed
 ```
 - We should split atom into three: `data`, `ui`, `io` for the performance reasons. We don't want to create whole `data` atom copy when user has scrolled and changed `ui` state
+- No state, but rather **states**:
+![states](images/states.png)
