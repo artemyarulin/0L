@@ -26,4 +26,21 @@ Problem that we will cause a reaction when button is pressed, not when it was re
 ```
 ButtonPressedState has changed from false to true
 ```
-This concept allow to do a lot of interesting and powerful staff.
+This concept allow to do a lot of interesting and powerful stuff.
+
+#### 2016-04-17 Sun
+
+- If we would provide automatic solution, then control would be lost, which means it wouldn't work in every case (most likely otherwise - it **would work** with just a few cases). General solution would be to provide a language where every case could be described. This our goal
+- Example application idea: Counter + save number on disk, where IO takes 1 second. Can we express requirements like:
+  - IO is expensive and we should minimize it (throttling)
+  - IO is free, can we achieve latency zero? Pre-save
+- Example application idea: Order management system. Login + Order dashboard + OrderView + CustomerView. Example case: Get order #12113 -> Customer -> Phone.
+- Example application idea: Graph of mouse pointer velocity:
+```` F#
+let speed x y =
+  let dx = x - prev x in
+  let dy = y - prev y in
+  dx * dx + dy * dy in
+speed
+```
+- We should split atom into three: `data`, `ui`, `io` for the performance reasons. We don't want to create whole `data` atom copy when user has scrolled and changed `ui` state

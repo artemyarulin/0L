@@ -19,9 +19,13 @@ The aim of this research project is to provide framework which could be used in 
 
 - Pre-fetch - we cannot do anything about speed of light and latency NY <> Sydney would never be less than ~70ms. But we can fetch the content **before** user has requested it
 - Pre-render - it takes time to create UI elements, especially when complex forms are involved. But we can prepare as much as we could **before** user can see it
+- Partial load - only load what user can see at first, load the rest later on
 - Prediction - what user going to do/request next? What is going to happen after it? What user **want** when he runs the application
 
 Another important goal that we would like to achieve is to minimize code complexity: it's very difficult and error prone to implement all those rules manually. Artificial intelligence is a best candidate which can have solution for our problem.
+
+It's impossible to solve all those problems automatically, but what we can do is to **provide a language which can be used for actions and constraints description**
+
 
 ## Tools and environment
 
@@ -42,7 +46,9 @@ As this concept has no value on small examples, we are going to implement fully-
   - [ ] Common solution and approaches in AI field
     - [x] Rule based approach and expert system looks interesting
     - [x] Goal oriented action planning - can we express domain as a set of goals/actions and constraints?
-    - [ ] [Coeffects](http://tomasp.net/coeffects/). Looks interesting
+    - [x] [Coeffects](http://tomasp.net/coeffects/). Looks interesting
+      - [x] Dynamic scoping - doesn't make any sense for us
+      - [x] `prev` keyword and the concept itself is very interesting
     - [ ] Logic programming and [core.logic](https://github.com/clojure/core.logic) looks interesting. But overall this is just depth-first search? [Prolog Programming for Artificial Intelligence](http://www.amazon.com/dp/0201403757/) probably has an answer
 - [ ] Implementation
   - [ ] UI-less engine
@@ -64,3 +70,9 @@ Articles:
 
 Books:
 - [Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp](http://www.amazon.com/Paradigms-Artificial-Intelligence-Programming-Studies/dp/1558601910)
+
+Projects:
+- [Haskell](https://www.haskell.org) - for teaching me that IO has to be handled carefully
+- [om-next](https://github.com/omcljs/om) - components queries is great idea
+- [redux](https://github.com/reactjs/redux) - almost perfect solution, used as a starting point
+- [om-next-ios-pure](https://github.com/artemyarulin/om-next-ios-pure) - previous attempt to solve the issue without actually thinking about it
