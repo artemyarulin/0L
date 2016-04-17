@@ -53,7 +53,7 @@ As IO is a `f(constraints,required-data)` there are two types of prediction: Sat
 ![prediction_types](images/prediction_types.png)
 
 Consider following typical IO cases:
-![io-cases](io_cases.png)
+![io-cases](images/io_cases.png)
 
 We can cover all of them using this kind of API:
-![prediction_io_api.png](prediction_io_api.png)
+![prediction_io_api.png](images/prediction_io_api.png)
