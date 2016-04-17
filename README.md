@@ -56,7 +56,9 @@ As this concept has no value on small examples, we are going to implement fully-
 - [ ] Proof
   - [ ] Benchmarks
 
-[thoughts flow](thoughts.md)
+## Current status
+
+Brainstorming, you can read all previous and current investigated ideas in [thoughts](thoughts.md)
 
 ## References
 
