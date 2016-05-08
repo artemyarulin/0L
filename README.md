@@ -62,7 +62,7 @@ Brainstorming, you can read all previous and current investigated ideas in [thou
 
 ## References
 
-Important papers:
+Papers:
 - [Applying Goal-Oriented Action Planning to Games](http://alumni.media.mit.edu/~jorkin/GOAP_draft_AIWisdom2_2003.pdf)
 - [Experience with Rules-Based Programming for Distributed, Concurrent, Fault-Tolerant Code](http://web.stanford.edu/~ouster/cgi-bin/papers/rules-atc15)
 - [Computer Architecture Lecture 24: Prefetching](http://www.ece.cmu.edu/~ece740/f11/lib/exe/fetch.php%3Fmedia%3Dwiki:lectures:onur-740-fall11-lecture24-prefetching-afterlecture.pdf)
@@ -72,6 +72,9 @@ Articles:
 
 Books:
 - [Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp](http://www.amazon.com/Paradigms-Artificial-Intelligence-Programming-Studies/dp/1558601910)
+
+Talks:
+- [Game development development](https://www.youtube.com/watch?v=ajX09xQ_UEg) - dependency graph looks relly nice
 
 Projects:
 - [Haskell](https://www.haskell.org) - for teaching me that IO has to be handled carefully
