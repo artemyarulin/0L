@@ -1,0 +1,62 @@
+* zerol - user interface rule based engine
+
+Research project about applying rule based systems into client side
+application
+
+** Properties
+
+*** Rules are pure functions
+
+We can acheive it by representing all ~IO~ as data, rather than making
+an actual HTTP call we simply emit new data ~{:type :http :url
+"http://example.com" :status :pending}~ and append to state
+
+*** IO and UI is bounded to data
+
+Rule may emit UI or IO based on data shape. If on next cycle data got
+changed and rule doesn't emit it then IO will be canceled and UI will
+be removed
+
+*** Emited IO contains additional metadata like priority
+
+Rules that operates on data may emit a lot of IO that may have
+additional information about it's priority. Good candidates could be
+~[:user-requested :pre-fetch :accessible]~, but it can be
+anything. Later on IO handlers may decide to batch IO; execute side
+affects in parralel; one by one depending on user speed, etc.
+
+** Terms
+- ~rule~ - Function that subscribes to certinan subset of ~state~,
+  once it changed - processes it and may return new piece of ~state~
+- ~state~ - Current state which represents all available data, ui and
+  happening io
+- ~io~ - All side effect that are executing currently. No IO should be
+  possible outside of that
+- ~ui~ - Current representation of UI that going to be rendered by
+  rendering engine
+- ~data~ - Normalized plain data. Essentially it's just a cache with
+  hot data while actual data is saved on server/database/etc.
+- ~age~ - Additional metadata about pieace of ~data~: When was it
+  fetched, from where, how it may be persisted, etc.
+
+** References
+
+*** Papers
+- [[http://alumni.media.mit.edu/~jorkin/GOAP_draft_AIWisdom2_2003.pdf][Applying Goal-Oriented Action Planning to Games]]
+- [[http://web.stanford.edu/~ouster/cgi-bin/papers/rules-atc15][Experience with Rules-Based Programming for Distributed, Concurrent, Fault-Tolerant Code]]
+- [[http://www.ece.cmu.edu/~ece740/f11/lib/exe/fetch.php%3Fmedia%3Dwiki:lectures:onur-740-fall11-lecture24-prefetching-afterlecture.pdf][Computer Architecture Lecture 24: Prefetching]]
+
+*** Articles
+- [[https://awelonblue.wordpress.com/2012/07/01/why-not-events/][Why not events]]
+
+*** Books
+- [[http://www.amazon.com/Paradigms-Artificial-Intelligence-Programming-Studies/dp/1558601910][Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp]]
+
+*** Talks
+- [[https://www.youtube.com/watch?v=ajX09xQ_UEg][Game development development]] - dependency graph looks relly nice
+
+*** Projects
+- [[https://www.haskell.org][Haskell]] - for teaching me that IO has to be handled carefully
+- [[https://github.com/omcljs/om][om-next]] - components queries is great idea
+- [[https://github.com/reactjs/redux][redux]] - almost perfect solution, used as a starting point
+- [[https://github.com/artemyarulin/om-next-ios-pure][om-next-ios-pure]] - previous attempt to solve the issue without actually thinking about it

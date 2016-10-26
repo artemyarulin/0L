@@ -14,14 +14,10 @@
         {:age {:sid "uuid:0909090" :time "23:11:23 45.891" :source :http} :executer :rule-name-c :data {:message {:content {:draft nil}}}}]}
 #+END_SRC
 - ~io~ should return new ~:age~ for data
-- ~io~ should accept priority, examples: ~[:user-requested :pre-fetch :accessible]~
 - As each piece of data has an age which includes ~:source~ we can
   skip everything that we fetched from disk or add something else:
   ~:persist-forever|:persist-never|:can-be-purged|:cheap-call|:tmp~
 - Relation between data parts: ~f(:data) -> [:ui,:io]~. Meaning that ~ui~ and ~io~ are created from data
-- No unbounded ~io~ or ~ui~ is possible: Meaning function from data should
-  emit ~io~ and ~ui~. If data got changed and rule doesn't emit ~io~ then it
-  got canceled and ~ui~ got removed
 - While ~ui~ and ~io~ is derivative of data, still ~data~ is just a
   RAM cache and not a reliable storage
 - Persiting state - only ~data~ has to be saved in order to recover
@@ -29,20 +25,21 @@
   clients if we wish (desktop big ~data~ state could be easily
   rendered on a small phone screen)
 
-** Terms
-- ~rule~ - Function that subscribes to certinan subset of ~state~, once it changed - processes it and may return new piece of ~state~
-- ~state~ - Current state which represents all available data, ui and happening io
-- ~io~ - All side effect that are executing currently. No IO should be possible outside of that
-- ~ui~ - Current representation of UI that going to be rendered by rendering engine
-- ~data~ - Normalized plain data. Essentially it's just a cache with hot data while actual data is saved on server/database/etc.
-- ~age~ - Additional metadata about pieace of ~data~: When was it fetched, from where, how it may be persisted, etc.
-
-** Hints
-- Never assume that IO will happen right after - meaning loading
-  indicator should NOT be attached to ~io~ progress
-- Prefer long chain of rules rather than short one - it will be
-  possible to break the chain and test each link separately
-
 ** Questions
 
 - Modes: Should ~modes~ be part of components props?
+
+- We tend to think about handling UI as a `f(event) ->
+  reaction`. Because computation is delayed until the actual event -
+  we have a latency which may be big (IO like HTTP call), or may be
+  small, but still noticeable (new UI window creation). The aim of
+  this research project is to provide framework which could be used in
+  order to minimize latency by:
+    - Pre-fetch - we cannot do anything about speed of light and
+      latency NY <> Sydney would never be less than ~70ms. But we can
+      fetch the content **before** user has requested it
+    - Partial load - only load what user can see at first, load the
+      rest later on
+    - Prediction - what user going to do/request next? What is going
+      to happen after it? What user **want** when he runs the
+      application
