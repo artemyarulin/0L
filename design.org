@@ -1,0 +1,30 @@
+* 0L design
+
+** Properties
+
+- State is a map with 3 keys:
+#+BEGIN_SRC clojure
+{:ui nil :io nil :data}
+#+END_SRC
+- IO is a side affect of ~:ui~ or ~:data~ state. If any of those changed
+  in a state where ~IO~ doesn't get emitted - we cancel it. Meaning
+  there has to be always something behind IO, no unbounded IO is
+  possible
+- ~:data~ is just a RAM cache. Never assume it's there, it could be
+  dropped on any moment. Meaning if UI has some data ID, then there
+  has to be rule which will fetch it
+- Persiting state - only ~:ui~ has to be saved in order to recover
+  application. UI tree is small and we can do it quickly. Saving ~:io~
+  doesn't make sense as we emit those on any change. Saving ~:data~
+  has to be done outside of 0L (databases, etc.) as it can be very big
+
+** Hints
+- Never assume that IO will happen right after - meaning loading
+  indicator should NOT be attached to ~io~ progress
+- Prefer long chain of rules rather than short one - it will be
+  possible to break the chain and test each link separately
+
+** Questions
+
+- How can we know what data to save?
+- Should mode be part of components props?
