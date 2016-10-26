@@ -1,22 +1,41 @@
 * 0L design
 
-** Properties
+** State
 
-- State is a map with 3 keys:
+- State is a list of maps with 3 keys: ~[{:ui nil :io nil :data nil}]~
+- Cache invalidataion - as ~data~ is just a cached data of some remote
+  storage we have to think about invalidation of that. For that we
+  store ~:age~ of each piece of data. Meaning data is:
 #+BEGIN_SRC clojure
-{:ui nil :io nil :data}
+{:data {:message {:sender "John" :content {:subject "Hello" :body "Hello ..."}}}}
+;; Is actually stored like that
+{:data [{:age {:sid "uuid:1231312" :time "00:00:00 00:00" :source :disk}  :executer :rule-name-a :data {:message {:sender "John" :content {:subject "Hello" :draft true}}}}
+        {:age {:sid "uuid:0909090" :time "23:11:11 12.112" :source :http} :executer :rule-name-b :data {:message {:content {:body "Hello ..."}}}}
+        {:age {:sid "uuid:0909090" :time "23:11:23 45.891" :source :http} :executer :rule-name-c :data {:message {:content {:draft nil}}}}]}
 #+END_SRC
-- IO is a side affect of ~:ui~ or ~:data~ state. If any of those changed
-  in a state where ~IO~ doesn't get emitted - we cancel it. Meaning
-  there has to be always something behind IO, no unbounded IO is
-  possible
-- ~:data~ is just a RAM cache. Never assume it's there, it could be
-  dropped on any moment. Meaning if UI has some data ID, then there
-  has to be rule which will fetch it
-- Persiting state - only ~:ui~ has to be saved in order to recover
-  application. UI tree is small and we can do it quickly. Saving ~:io~
-  doesn't make sense as we emit those on any change. Saving ~:data~
-  has to be done outside of 0L (databases, etc.) as it can be very big
+- ~io~ should return new ~:age~ for data
+- ~io~ should accept priority, examples: ~[:user-requested :pre-fetch :accessible]~
+- As each piece of data has an age which includes ~:source~ we can
+  skip everything that we fetched from disk or add something else:
+  ~:persist-forever|:persist-never|:can-be-purged|:cheap-call|:tmp~
+- Relation between data parts: ~f(:data) -> [:ui,:io]~. Meaning that ~ui~ and ~io~ are created from data
+- No unbounded ~io~ or ~ui~ is possible: Meaning function from data should
+  emit ~io~ and ~ui~. If data got changed and rule doesn't emit ~io~ then it
+  got canceled and ~ui~ got removed
+- While ~ui~ and ~io~ is derivative of data, still ~data~ is just a
+  RAM cache and not a reliable storage
+- Persiting state - only ~data~ has to be saved in order to recover
+  application. It allows in a feature to sync data between different
+  clients if we wish (desktop big ~data~ state could be easily
+  rendered on a small phone screen)
+
+** Terms
+- ~rule~ - Function that subscribes to certinan subset of ~state~, once it changed - processes it and may return new piece of ~state~
+- ~state~ - Current state which represents all available data, ui and happening io
+- ~io~ - All side effect that are executing currently. No IO should be possible outside of that
+- ~ui~ - Current representation of UI that going to be rendered by rendering engine
+- ~data~ - Normalized plain data. Essentially it's just a cache with hot data while actual data is saved on server/database/etc.
+- ~age~ - Additional metadata about pieace of ~data~: When was it fetched, from where, how it may be persisted, etc.
 
 ** Hints
 - Never assume that IO will happen right after - meaning loading
@@ -26,5 +45,4 @@
 
 ** Questions
 
-- How can we know what data to save?
-- Should mode be part of components props?
+- Modes: Should ~modes~ be part of components props?
