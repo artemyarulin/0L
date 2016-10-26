@@ -3,27 +3,79 @@
 Research project about applying rule based systems into client side
 application
 
-** Properties
+** Key points
 
-*** Rules are pure functions
+*** Separation from underlaying platform
 
-We can acheive it by representing all ~IO~ as data, rather than making
-an actual HTTP call we simply emit new data ~{:type :http :url
-"http://example.com" :status :pending}~ and append to state
+As we are representing IO as data and IO handlers is suppied
+separately from rules we can run our application across different
+platforms. Having internal representation of UI tree also helps and
+abstracts core part of the app from UI frameworks details
 
-*** IO and UI is bounded to data
+*** Easy testing
 
-Rule may emit UI or IO based on data shape. If on next cycle data got
-changed and rule doesn't emit it then IO will be canceled and UI will
-be removed
+Our rules are pure functions. Having internal representation of UI
+allows us to do UI testing easily
 
-*** Emited IO contains additional metadata like priority
+- [ ] How can we send additional events? How not so send it too soon?
 
-Rules that operates on data may emit a lot of IO that may have
-additional information about it's priority. Good candidates could be
-~[:user-requested :pre-fetch :accessible]~, but it can be
-anything. Later on IO handlers may decide to batch IO; execute side
-affects in parralel; one by one depending on user speed, etc.
+*** Cache invalidation
+
+Client side are often operating with cached representation of data
+while actual data is stored somewhere else. Issue is that we need to
+be able to define rules which will invalidate data in certain
+cases. We can do it by associating additional metadata information
+about source and age of pices of data
+
+- [ ] While data representation is good enough, accessing ~:age~ data
+  is very limited
+- [ ] How can we represent relation between data? Otherwise cache
+  would not be consistent
+
+*** Prefetch data
+
+Having simple logic of emitting new IO from data makes it easy to
+produce pre-fetch requests. Additional information about IO priorities
+makes it easy to queue requests in a most performant way
+
+- [ ] ~:accessible~ priority - how can we follow what is currently
+  rendered on screen?
+
+*** Canceling IO and removing UI
+
+All IO and UI has to be bounded to data. If data got changed and IO is
+not emitted anymore - it will be canceled automatically, same for
+UI. It makes IO follow actual application state and data automatically
+
+*** Optimistic updates
+
+- [ ] How does it look like?
+
+*** Session persistence
+
+- [ ] How can we save only the data that we actually need
+
+*** Multiple app entry points
+
+As UI and IO is just a function from data it become trivial to start
+application with different starting state
+
+*** Instant run by using partial load
+
+- [ ] Can we somehow load only the data which is visible currently to user?
+
+*** Prediction
+
+- [ ] What can we do based on data history that we have?
+
+*** Tracability
+
+We store all UI, IO and data changes. In this case logging in most of
+the cases is not needed
+
+- [ ] How can we attach remote logger for example? As a rule or somehow differently?
+- [ ] Rule monitoring - how can we gather information about certain
+  rule execution and store it remotly on our server for statistics?
 
 ** Terms
 - ~rule~ - Function that subscribes to certinan subset of ~state~,
