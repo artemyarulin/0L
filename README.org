@@ -15,7 +15,8 @@ abstracts core part of the app from UI frameworks details
 *** Easy testing
 
 Our rules are pure functions. Having internal representation of UI
-allows us to do UI testing easily
+allows us to do UI testing easily. As only IO can be async then when
+IO is not used update cycle is synchronouse and can be easity tested
 
 - [ ] How can we send additional events? How not so send it too soon?
 
@@ -49,9 +50,19 @@ UI. It makes IO follow actual application state and data automatically
 
 *** Optimistic updates
 
-- [ ] How does it look like?
+By design UI events has to emit new data, which in turn may emit
+IO. With such design we have output IO queue for free. It makes it
+easy to solve optimistic issues with solutions like:
+  - Repeat IO
+  - Persists IO and continue after
+  - Recover from error (authentication issues for example) and continue
 
 *** Session persistence
+
+As all IO and UI generated from data we can save only data in order to
+recover application state later on. With such design we can even
+restore session from other UI types e.g. restoring web session on a
+phone
 
 - [ ] How can we save only the data that we actually need
 
@@ -62,7 +73,8 @@ application with different starting state
 
 *** Instant run by using partial load
 
-- [ ] Can we somehow load only the data which is visible currently to user?
+- [ ] Can we somehow load only the data which is visible currently to
+  user?
 
 *** Prediction
 
@@ -73,7 +85,8 @@ application with different starting state
 We store all UI, IO and data changes. In this case logging in most of
 the cases is not needed
 
-- [ ] How can we attach remote logger for example? As a rule or somehow differently?
+- [ ] How can we attach remote logger for example? As a rule or
+  somehow differently?
 - [ ] Rule monitoring - how can we gather information about certain
   rule execution and store it remotly on our server for statistics?
 
@@ -90,6 +103,7 @@ the cases is not needed
   hot data while actual data is saved on server/database/etc.
 - ~age~ - Additional metadata about pieace of ~data~: When was it
   fetched, from where, how it may be persisted, etc.
+- ~update cycle~ - Procedure of running rules which were affected by data change
 
 ** References
 
