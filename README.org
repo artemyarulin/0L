@@ -3,6 +3,40 @@
 Research project about applying rule based systems into client side
 application
 
+** Status example
+
+It renders!
+
+#+BEGIN_SRC clojure
+
+(ns zerol.engine-test
+  (:require [zerol.engine :as z]))
+
+(def engine (z/engine [[[:a][:b] inc]]
+                      {:a 1}
+                      {}
+                      (fn[state event!]
+                        (println "Current:" state)
+                        (when (< (:b state) 5)
+                          (Thread/sleep 1000)
+                          (println "Want more!")
+                          (event! [:a] [:a] inc)))))
+(z/start-engine! engine)
+(z/apply-event! engine [:a] [:a] inc)
+
+;; Outputs:
+;; Current: {:a 1, :b 2}
+;; Want more!
+;; Current: {:a 2, :b 3}
+;; Want more!
+;; Current: {:a 3, :b 4}
+;; Want more!
+;; Current: {:a 4, :b 5}
+;; Want more!
+;; Current: {:a 5, :b 6}
+
+#+END_SRC
+
 ** Key points
 
 *** Separation from underlaying platform
