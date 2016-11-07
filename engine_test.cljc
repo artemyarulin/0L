@@ -4,14 +4,14 @@
 
 (deftest normalize-query
   (are [exp query] (= exp (z/normalize-query query))
-    [#{:ui}] [:ui]
-    [#{:ui :data}] [:ui :data]
-    [#{:ui :a} #{:data :b}] [[:ui :a][:data :b]]))
+    [[:ui]] [:ui]
+    [[:ui :data]] [:ui :data]
+    [[:ui :a] [:data :b]] [[:ui :a][:data :b]]))
 
 (deftest normalize-rule
   (are [exp rule] (= exp (z/normalize-rule rule))
-    [[[#{:ui}] [#{:ui}] identity]] [[:ui] [:ui] identity]
-    [[[#{:a}][#{:b}] identity] [[#{:c}][#{:z}] identity]]
+    [[[[:ui]] [[:ui]] identity]] [[:ui] [:ui] identity]
+    [[[[:a]] [[:b]] identity] [[[:c]] [[:z]] identity]]
     (fn[][[[:a][:b] identity] [[:c][:z] identity]])))
 
 (deftest normalize-rules
@@ -38,17 +38,21 @@
 
   (is (z/normalize-rules [[[:ui :counter :value] [:ui :counter] nil]])))
 
-(deftest engine
-  (is (= {:rules {[:a] #{[[[:a]] [[:b]] nil]}
-                [:b] #{}}
-        :state (atom {:z 1})
-        :io {}
-        :renderer nil}
-         (z/engine [[[:a][:b] nil]]
-                   {:z 1}
-                   {}
-                   nil))))
+(deftest apply-changes
+  (let [cancel (atom nil)]
+    (is (= {:io {:hello nil}}
+           (z/apply-changes {:io {:hello {:type :http :cancel #(reset! cancel %)}}}
+                            [[:io :hello]]
+                            [nil])))
+    (is (= {:type :http} @cancel))))
 
+(deftest engine
+  (is (= {:state {:a 1, :b 2}
+          :rules {[:a] [[[[:a]] [[:b]] inc]]
+                  [:b] []}
+          :renderer nil}
+         @(z/engine [[[:a][:b] inc]]
+                   {:a 1}))))
 
 (deftest apply-changes
   (is (= {:a 3 :b 4}
@@ -57,20 +61,37 @@
                           [3 4]))))
 
 (deftest balance
-  (let [rules [(z/normalize-rule [[:a :z] [:b :z] inc])]]
-    (is (= {:a {:z 10}} (z/balance rules {:a {:z 10}} #{})))
-    (is (= {:a {:z 10} :b {:z 11}} (z/balance rules {:a {:z 10}} #{[:a :z]})))
-    (is (= {:a {:z 10} :b {:z 11}} (z/balance rules {:a {:z 10}} #{[:a]})))))
+  (let [rules (z/normalize-rules [[[:a :z] [:b :z] inc]])]
+    (is (= {:a {:z 10}} (z/balance {:a {:z 10}} rules [])))
+    (is (= {:a {:z 10} :b {:z 11}} (z/balance {:a {:z 10}} rules [[:a :z]])))
+    (comment (is (= {:a {:z 10} :b {:z 11}} (z/balance {:a {:z 10}} rules [[:a]]))))))
 
-(def engine (z/engine [[[:a][:b] inc]]
-                      {:a 1}
-                      {}
-                      (fn[state event!]
-                        (println "Current:" state)
-                        (when (< (:b state) 10)
-                          (Thread/sleep 1000)
-                          (println "Want more!")
-                          (event! [:a] [:a] inc)))))
-(z/start-engine! engine)
+(deftest engine-io
+  (-> (z/engine [[[:update] [:io :updating] #(hash-map :type :http :value %)]
+                 [[:io :updating :result] [:data :updated] identity]]
+                {:update 2}
+                #(assoc-in %2 [:updating :result] 42))
+      deref
+      (get-in [:state :data :updated])
+      (= 42)
+      is))
 
-(z/apply-event! engine [:a] [:a] inc)
+(deftest engine-async-io
+  (let [p (promise)
+        _ (println "----New run:")]
+    (z/engine [[[:update] [:io :updating] #(hash-map :type :http :value %)]
+               [[:io :updating :result] [:data :updated]
+                (fn[value]
+                  (println "Updating with:" value)
+                  (when value
+                    (deliver p value))
+                  value)]]
+              {:update 2}
+              (fn[event! io] (when-not (-> io :updating :result)
+                              (future
+                                (println "Starting...")
+                                (Thread/sleep 1000)
+                                (event! [:io :updating] [:io :updating :result] (constantly 42))
+                                (println "Delivered!")))
+                io))
+    (is (= 42 @p))))

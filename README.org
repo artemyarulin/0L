@@ -52,8 +52,6 @@ Our rules are pure functions. Having internal representation of UI
 allows us to do UI testing easily. As only IO can be async then when
 IO is not used update cycle is synchronouse and can be easity tested
 
-- [ ] How can we send additional events? How not so send it too soon?
-
 *** Cache invalidation
 
 Client side are often operating with cached representation of data
