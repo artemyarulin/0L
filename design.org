@@ -20,3 +20,16 @@
 - Relation between data parts: ~f(:data) -> [:ui,:io]~. Meaning that ~ui~ and ~io~ are created from data
 - While ~ui~ and ~io~ is derivative of data, still ~data~ is just a
   RAM cache and not a reliable storage
+
+** IO
+
+Proposal for standartisation of IO:
+
+#+BEGIN_SRC clojure
+{:type :http
+ :error (ex-info "Some message" {:add-param1 "add-param-value1"})
+ :options io-options
+ :success {:status 200 :headers {} :body "Something"}
+ :status [nil | :progress | :error | :success]
+ :cancel (fn[])}
+#+END_SRC
