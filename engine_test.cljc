@@ -45,7 +45,11 @@
            (z/apply-changes {:io {:hello {:type :http :cancel #(reset! cancel %)}}}
                             [[:io :hello]]
                             [nil])))
-    (is (= {:type :http} @cancel))))
+    (is (= {:type :http} @cancel))
+    (is (= {:a 3 :b 4}
+           (z/apply-changes {:a 1 :b 2}
+                            [[:a] [:b]]
+                            [3 4])))))
 
 (deftest engine
   (is (= {:state {:a 1, :b 2}
@@ -54,12 +58,6 @@
           :renderer nil}
          @(z/engine [[[:a][:b] inc]]
                    {:a 1}))))
-
-(deftest apply-changes
-  (is (= {:a 3 :b 4}
-         (z/apply-changes {:a 1 :b 2}
-                          [[:a] [:b]]
-                          [3 4]))))
 
 (deftest balance
   (let [rules (z/normalize-rules [[[:a :z] [:b :z] inc]])]
