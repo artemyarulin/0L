@@ -14,29 +14,30 @@
     [[[[:a]] [[:b]] identity] [[[:c]] [[:z]] identity]]
     (fn[][[[:a][:b] identity] [[:c][:z] identity]])))
 
+;; TODO: Add following tests as well
+;; (is (z/normalize-rules [[[:ui] [:ui] identity]]))
+;; ;; Yes, notify up
+;; ;; :a:z -> :a:x
+;; (z/normalize-rules [[[:a :z] [:a :x] nil]])
+;; ;; :a -> :a
+;; (z/normalize-rules [[[:a] [:a] nil]])
+;; ;; :a:z -> :a, :a -> :a:z
+;; (z/normalize-rules [[[:a :z] [:a] nil]])
+;; ;; :a -> :a:z, :a:z -> :a
+;; (z/normalize-rules [[[:a] [:a :z] -]])
+;; (is (z/normalize-rules [[[:ui :counter] [:ui :counter] nil]
+;;                         [[:ui] [:ui] nil]]))
+;;(is (z/normalize-rules [[[:ui :counter :value] [:ui :counter] nil]])))
 (deftest normalize-rules
-  ;; No
-  (z/normalize-rules [[[:a] [:b] identity]])
-  (z/normalize-rules [[[:a :c] [:a :z] identity]])
-  (z/normalize-rules [[[:a :c :d] [:a :c :z] identity]])
-
-  ;; Yes, same
-  (is (z/normalize-rules [[[:ui] [:ui] identity]]))
-  ;; Yes, notify up
-
-  ;; :a:z -> :a:x
-  (z/normalize-rules [[[:a :z] [:a :x] nil]])
-  ;; :a -> :a
-  (z/normalize-rules [[[:a] [:a] nil]])
-  ;; :a:z -> :a, :a -> :a:z
-  (z/normalize-rules [[[:a :z] [:a] nil]])
-  ;; :a -> :a:z, :a:z -> :a
-  (z/normalize-rules [[[:a] [:a :z] -]])
-
-  (is (z/normalize-rules [[[:ui :counter] [:ui :counter] nil]
-                          [[:ui] [:ui] nil]]))
-
-  (is (z/normalize-rules [[[:ui :counter :value] [:ui :counter] nil]])))
+  (are [rules exp] (= exp (z/normalize-rules rules))
+    [[[:a] [:b] identity]] {[:a] [[[[:a]] [[:b]] identity]]
+                            [:b] []}
+    [[[:a :c] [:a :z] identity]] {[:a :c] [[[[:a :c]] [[:a :z]] identity]]
+                                  [:a :z] []}
+    [[[[:a] [:c]] [[:a] [:c]] identity]] {[:a] [[[[:a] [:c]] [[:a] [:c]] identity]]
+                                          [:c] [[[[:a] [:c]] [[:a] [:c]] identity]]}
+    [[[:a :c :d] [:a :c :z] identity]] {[:a :c :d] [[[[:a :c :d]] [[:a :c :z]] identity]]
+                                        [:a :c :z] []}))
 
 (deftest apply-changes
   (let [cancel (atom nil)]

@@ -14,14 +14,15 @@
 
 (defn all-queries [ks include-self?]
   (let [x (if include-self? 1 0)]
-  (->> ks
-       (mapcat #(->> % count (+ x) (range 1) (map (partial subvec % 0))))
-       distinct)))
+    (->> ks
+         (mapcat #(->> % count (+ x) (range 1) (map (partial subvec % 0))))
+         distinct)))
 
 (defn normalize-rules [rules]
   ;; TODO: Deffenetly not the best code that I've wrote
   ;; Refactor those, but make sure test are passing
-  (let [new-rules (-> (fn[acc [ins outs f]]
+  (let [norm-rules (->> rules (reduce #(into %1 (normalize-rule %2)) []))
+        new-rules (-> (fn[acc [ins outs f]]
                         (loop [acc acc
                                ks-ins (all-queries ins true)]
                           (if (empty? ks-ins)
@@ -29,8 +30,8 @@
                             (recur (cond-> acc
                                      (contains? acc (first ks-ins)) (update-in [(first ks-ins)] conj [ins outs f]))
                                    (rest ks-ins)))))
-                      (reduce (zipmap (concat (map first rules) (map second rules)) (repeat []))
-                              (->> rules (reduce #(into %1 (normalize-rule %2)) []))))]
+                      (reduce (zipmap (concat (mapcat first norm-rules) (mapcat second norm-rules)) (repeat []))
+                              norm-rules))]
     (-> (fn[acc [k v]]
           (let [all-keys (all-queries [k] false)
                 to-merge (mapcat #(acc %) all-keys)]
