@@ -78,21 +78,26 @@
       is))
 
 (deftest engine-async-io
-  (let [p (promise)
-        _ (println "----New run:")]
+  (let [p (promise)]
     (z/engine [[[:update] [:io :updating] #(hash-map :type :http :value %)]
                [[:io :updating :result] [:data :updated]
                 (fn[value]
-                  (println "Updating with:" value)
                   (when value
                     (deliver p value))
                   value)]]
               {:update 2}
               (fn[event! io] (when-not (-> io :updating :result)
                               (future
-                                (println "Starting...")
                                 (Thread/sleep 1000)
-                                (event! [:io :updating] [:io :updating :result] (constantly 42))
-                                (println "Delivered!")))
+                                (event! [:io :updating] [:io :updating :result] (constantly 42))))
                 io))
     (is (= 42 @p))))
+
+(deftest balance-one-rule-start
+  (-> (z/engine [[[:a] [:b] inc]
+                 [[:b] [:c] inc]]
+                {:a 0})
+      (z/apply-event! [:a] [:a] (constantly 10))
+      :state
+      (= {:a 10 :b 11 :c 12})
+      is))

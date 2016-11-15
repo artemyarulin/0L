@@ -66,13 +66,13 @@
               same-data? (= data-cur data-new)
               no-rules? (-> rules rest empty?)
               next-state (cond-> state (not same-data?) (apply-changes queries-out data-new))
-              next-queries (if no-rules? (distinct updated) queries)
-              next-updated (cond-> updated (not same-data?) (into queries-out) no-rules? empty)
+              next-updated (cond-> updated (not same-data?) (into queries-out))
+              next-queries (if no-rules? (into (distinct updated) queries-out) queries)
               next-rules (if no-rules? (mapcat #(orig-rules %) next-updated) (rest rules))]
           (recur next-rules
                  next-state
                  next-queries
-                 next-updated))))))
+                 (if no-rules? [] next-updated)))))))
 
 (defn apply-event! [engine in out f]
   (let [new-state (-> (:state @engine)
