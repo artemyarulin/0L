@@ -158,3 +158,16 @@ the cases is not needed
 - [[https://github.com/omcljs/om][om-next]] - components queries is great idea
 - [[https://github.com/reactjs/redux][redux]] - almost perfect solution, used as a starting point
 - [[https://github.com/artemyarulin/om-next-ios-pure][om-next-ios-pure]] - previous attempt to solve the issue without actually thinking about it
+
+** Questions & ideas
+
+Proposal for standartisation of IO:
+
+#+BEGIN_SRC clojure
+{:type :http
+ :error (ex-info "Some message" {:add-param1 "add-param-value1"})
+ :options io-options
+ :success {:status 200 :headers {} :body "Something"}
+ :status [nil | :progress | :error | :success]
+ :cancel (fn[])}
+#+END_SRC

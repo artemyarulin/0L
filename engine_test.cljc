@@ -77,6 +77,7 @@
       (= 42)
       is))
 
+#?(:clj
 (deftest engine-async-io
   (let [p (promise)]
     (z/engine [[[:update] [:io :updating] #(hash-map :type :http :value %)]
@@ -91,7 +92,7 @@
                                 (Thread/sleep 1000)
                                 (event! [:io :updating] [:io :updating :result] (constantly 42))))
                 io))
-    (is (= 42 @p))))
+    (is (= 42 @p)))))
 
 (deftest balance-one-rule-start
   (-> (z/engine [[[:a] [:b] inc]
