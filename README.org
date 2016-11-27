@@ -152,6 +152,8 @@ the cases is not needed
 
 *** Talks
 - [[https://www.youtube.com/watch?v=ajX09xQ_UEg][Game development development]] - dependency graph looks relly nice
+- [[https://www.youtube.com/watch?v=5V1ynVyud4M][Eve]] - normalized data;IO as data;rules, many similarities
+- [[https://www.youtube.com/watch?v=R2Aa4PivG0g][I See What You Mean]] - logic rules, notion of time
 
 *** Projects
 - [[https://www.haskell.org][Haskell]] - for teaching me that IO has to be handled carefully
@@ -161,7 +163,7 @@ the cases is not needed
 
 ** Questions & ideas
 
-Proposal for standartisation of IO:
+- Proposal for standartisation of IO:
 
 #+BEGIN_SRC clojure
 {:type :http
@@ -171,3 +173,7 @@ Proposal for standartisation of IO:
  :status [nil | :progress | :error | :success]
  :cancel (fn[])}
 #+END_SRC
+
+- Zerol should be answer WHY it did something
+- Zerol should have a notion of time. Without it wouldn't be able to
+  answer ~WHY~ quesiont and make cache invalidation
