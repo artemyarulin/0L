@@ -177,3 +177,36 @@ the cases is not needed
 - Zerol should be answer WHY it did something
 - Zerol should have a notion of time. Without it wouldn't be able to
   answer ~WHY~ quesiont and make cache invalidation
+  - Rough idea - new root key ~time~ which would look like:
+#+BEGIN_SRC clojure
+
+{:hystory [[where why what prev]
+          [T1 query-caused-change query-changed prev-value]]}
+
+;; where/T1,T2...TN - Where new value appeared. It could be point in time (simple timestamp) or more complex location like [session-id,remote,timestamp]
+;; why/query-caused-change - WHY something got changed, what caused that
+;; what/query-changed - WHAT got changed
+;; prev/prev-data-value - Previous query value
+
+;; Example with counter
+
+{:time (['T3 [:ui :button :click?] [:data :counter] 8]
+        ['T2 [:ui :button :click?] [:data :counter] 7]
+        ['T1 [:ui :button :click?] [:data :counter] 6]
+        ['T0 [] nil {:data {:counter 5} :ui {:button {:click? false}}}]]}
+
+;; Now we can ask why questions
+
+> (why [:data :counter])
+Because:
+ 'T3 [:ui :button :click?] changed it from 7 to 8
+ 'T2 [:ui :button :click?] changed it from 6 to 7
+ 'T1 [:ui :button :click?] changed it from 5 to 6
+ 'T0 initialized it with 5
+
+#+END_SRC
+- Like Datomic we should be able to ask ~what-if~ question, meaning do
+  temp change on state following by render. It will help during manual
+  testing for REPL. More awesome idea - take existing point in history
+  and branch there. Use case: App did IO and rendered it. What-if
+  server returned different data?
