@@ -174,9 +174,11 @@ the cases is not needed
  :cancel (fn[])}
 #+END_SRC
 
+- In case of a crash - what should we do?
 - Zerol should be answer WHY it did something
 - Zerol should have a notion of time. Without it wouldn't be able to
   answer ~WHY~ quesiont and make cache invalidation
+
   - Rough idea - new root key ~time~ which would look like:
 #+BEGIN_SRC clojure
 

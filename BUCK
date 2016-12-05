@@ -1,7 +1,1 @@
-cljc_module(name = 'zerol',
-            src = ['engine.cljc',
-                   'rules.cljc',
-                   'test.cljc'],
-            tests = ['engine_test.cljc',
-                     'rules_test.cljc',
-                     'test_test.cljc'])
+cljc_module(name = 'zerol', src = 'core.cljc', tests = 'core_test.cljc')
