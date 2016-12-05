@@ -1,9 +1,9 @@
 (ns zerol.core)
 
 (defn rules-index
-  "Creates index map of rules with {[query] [rules]} such that if
-  'query' data has changed all possibly affected rules can be easily
-  fetched by just reading value in the map"
+  "Creates index map of rules with {query [rules]} such that if query
+  data has changed all possibly affected rules can be easily fetched
+  by just reading value in the map"
   [rules]
   (letfn [(norm-query [query] (cond (every? keyword? query) [query]
                                     (every? coll? query) query
