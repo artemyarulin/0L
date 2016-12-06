@@ -32,3 +32,31 @@
                                          index
                                          index))]
     (-> rules index-down-up index-up-down)))
+
+(defn fixpoint [orig-state rules-idx queries keeper]
+  (loop [state orig-state
+         changes []
+         rules (->> queries (select-keys rules-idx) (mapcat second))]
+    (let [[rule-ins rule-outs f] (first rules)]
+      (if-not f
+        [state changes]
+        (let [data-in (map #(get-in state %) rule-ins)
+              data-cur (map #(get-in state %) rule-outs)
+              safe-f (fn[& args] (try (apply f args)
+                                     (catch #?(:cljs js/Object :clj Exception) e
+                                       (ex-info "Rule error" {:error #?(:clj e
+                                                                        :cljs {:message (.-message e)
+                                                                               :stack (.-stack e)
+                                                                               :name (.-name e)})
+                                                              :data args
+                                                              :query-in rule-ins
+                                                              :query-out rule-outs}))))
+              data-new (apply safe-f data-in)]
+          (if (ex-data data-new)
+            [state [(keeper rule-ins rule-outs data-cur data-new)]]
+            (let [norm-data (zipmap rule-outs (cond-> data-new (= 1 (count rule-outs)) vector))
+                  changed-queries (filter #(not= (get-in state [%]) (get-in norm-data [%])) rule-outs)
+                  new-state (reduce (fn[acc q] (update-in acc q (constantly (get-in norm-data [q])))) state changed-queries)]
+              (recur new-state
+                     (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))
+                     (into (rest rules) (mapcat second (select-keys rules-idx changed-queries)))))))))))

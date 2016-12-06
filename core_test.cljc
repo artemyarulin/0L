@@ -65,3 +65,23 @@
      [:a] [[[[:a] [:b]] [[:c]] 'f]]
      [:b] [[[[:a] [:b]] [[:c]] 'f]]}
     [[[[:a][:b]] [:c] 'f]]))
+
+(deftest fixpoint
+  (are [exp args] (= exp (apply z/fixpoint args))
+    ;; One
+    [{:a 1 :b 2} [[[[:a]] [:b] nil 2]]]
+    [{:a 1} (z/rules-index [[[:a] [:b] inc]]) [[:a]] vector]
+    ;; Chain
+    [{:a 1 :b 2 :c 3} [[[[:a]] [:b] nil 2] [[[:b]] [:c] nil 3]]]
+    [{:a 1} (z/rules-index [[[:a] [:b] inc] [[:b] [:c] inc]]) [[:a]] vector]))
+
+(deftest fixpoint-errors
+  (let [[state changes] (z/fixpoint {} (z/rules-index [[[:a] [:b] #(throw (ex-info "Err" {}))]]) [[:a]] vector)]
+    (is (= state {}))
+    (is ((every-pred :error :data :query-in :query-out) (ex-data (nth (first changes) 3))))))
+
+#?(:cljs
+   (deftest fixpoint-error-cljs
+     (let [[state changes] (z/fixpoint {} (z/rules-index [[[:a] [:b] (fn[v](js/eval "crash"))]]) [[:a]] vector)]
+       (is (= state {}))
+       ((every-pred :message :name :stack) (:error (ex-data (nth (first changes) 3)))))))
