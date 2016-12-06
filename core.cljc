@@ -13,7 +13,7 @@
                                        (update-in [1] norm-query))
                                   (if (fn? rule) (rule) [rule])))
           (all-queries [ks] (->> ks
-                                 (mapcat #(->> % count inc (range 1) (map (partial subvec % 0))))
+                                 (mapcat #(->> % count inc (range 0) (map (partial subvec % 0))))
                                  distinct))
           (index-down-up [rules] (->> rules
                                       (mapcat norm-rule)
