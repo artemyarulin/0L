@@ -33,7 +33,12 @@
                                          index))]
     (-> rules index-down-up index-up-down)))
 
-(defn fixpoint [orig-state rules-idx queries keeper]
+(defn fixpoint
+  "Given state, rules index, list of queries for data that may have
+  changed and a keeper function runs all possibly effected rules
+  recursivly untill fix point is reached. Returns new state and list
+  of changes piped through keeper"
+  [orig-state rules-idx queries keeper]
   (loop [state orig-state
          changes []
          rules (->> queries (select-keys rules-idx) (mapcat second))]
@@ -55,7 +60,7 @@
           (if (ex-data data-new)
             [state [(keeper rule-ins rule-outs data-cur data-new)]]
             (let [norm-data (zipmap rule-outs (cond-> data-new (= 1 (count rule-outs)) vector))
-                  changed-queries (filter #(not= (get-in state [%]) (get-in norm-data [%])) rule-outs)
+                  changed-queries (filter #(not= (get-in state %) (get-in norm-data [%])) rule-outs)
                   new-state (reduce (fn[acc q] (update-in acc q (constantly (get-in norm-data [q])))) state changed-queries)]
               (recur new-state
                      (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))

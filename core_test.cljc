@@ -75,8 +75,17 @@
     [{:a 1 :b 2 :c 3} [[[[:a]] [:b] nil 2] [[[:b]] [:c] nil 3]]]
     [{:a 1} (z/rules-index [[[:a] [:b] inc] [[:b] [:c] inc]]) [[:a]] vector]))
 
+(deftest fixpoint-should-track-changed-queries
+  (-> (z/fixpoint {:a 1 :b 1 :d 1} (z/rules-index [[[:a] [[:b][:c]] #(vector % (inc %))]
+                                                   [[:b] [:d] inc]])
+                  [[:a]]
+                  vector)
+      first
+      (= {:a 1 :b 1 :d 1 :c 2})
+      is))
+
 (deftest fixpoint-errors
-  (let [[state changes] (z/fixpoint {} (z/rules-index [[[:a] [:b] #(throw (ex-info "Err" {}))]]) [[:a]] vector)]
+  (let [[state changes] (z/fixpoint {} (z/rules-index [[[:a] [:b] #(throw (ex-info "Err" {:v %}))]]) [[:a]] vector)]
     (is (= state {}))
     (is ((every-pred :error :data :query-in :query-out) (ex-data (nth (first changes) 3))))))
 
