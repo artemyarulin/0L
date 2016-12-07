@@ -95,7 +95,7 @@
        (is (= state {}))
        ((every-pred :message :name :stack) (:error (ex-data (nth (first changes) 3)))))))
 
-(deftest fixpont-should-return-original-state
+(deftest fixpont-should-return-original-state-on-error
   (-> (z/fixpoint {:a 1}
                   (z/rules-index [[[:a] [:b] inc]
                                   [[:b] [:c] #(throw (ex-info "Err" {:v %}))]])
