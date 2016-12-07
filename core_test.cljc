@@ -119,3 +119,11 @@
   (-> (z/engine :state {:a 1}) deref :state (= {:a 1}) is)
   (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc]]) deref :state (= {:a 1 :b 2}) is)
   (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc]]) deref :past (= [['T0 [[:a]] [:b] nil 2]]) is))
+
+#?(:clj (deftest engine-side-effects-initial
+          (let [out (promise)]
+            (z/engine :state {:a 1} :side-effects {[:a] (fn[_ a] (deliver out a) a)})
+            (is (= 1 @out))))
+   :cljs (deftest engine-side-effects-initial
+           (cljs.test/async done
+                  (z/engine :state {:a 1} :side-effects {[:a] (fn[_ a] (is (= 1 a)) (done) a)}))))
