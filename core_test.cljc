@@ -84,13 +84,38 @@
       (= {:a 1 :b 1 :d 1 :c 2})
       is))
 
-(deftest fixpoint-errors
+(deftest fixpoint-rule-error
   (let [[state changes] (z/fixpoint {} (z/rules-index [[[:a] [:b] #(throw (ex-info "Err" {:v %}))]]) [[:a]] vector)]
     (is (= state {}))
     (is ((every-pred :error :data :query-in :query-out) (ex-data (nth (first changes) 3))))))
 
 #?(:cljs
-   (deftest fixpoint-error-cljs
+   (deftest fixpoint-rule-error-cljs
      (let [[state changes] (z/fixpoint {} (z/rules-index [[[:a] [:b] (fn[v](js/eval "crash"))]]) [[:a]] vector)]
        (is (= state {}))
        ((every-pred :message :name :stack) (:error (ex-data (nth (first changes) 3)))))))
+
+(deftest fixpont-should-return-original-state
+  (-> (z/fixpoint {:a 1}
+                  (z/rules-index [[[:a] [:b] inc]
+                                  [[:b] [:c] #(throw (ex-info "Err" {:v %}))]])
+                  [[:a]]
+                  vector)
+      first
+      (= {:a 1})
+      is))
+
+(deftest fixpoint-apply-change-error
+  (let [init-state {:a 1 :c 'c}
+        [state changes] (z/fixpoint init-state
+                                    (z/rules-index [[[:a] [:c :z] inc]])
+                                    [[:a]]
+                                    vector)]
+    (is (= state init-state))
+    (is ((every-pred :state :query :data :error) (ex-data (nth (first changes) 3))))))
+
+(deftest engine
+  (-> (z/engine) deref (= {:state {} :past []}) is)
+  (-> (z/engine :state {:a 1}) deref :state (= {:a 1}) is)
+  (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc]]) deref :state (= {:a 1 :b 2}) is)
+  (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc]]) deref :past (= [['T0 [[:a]] [:b] nil 2]]) is))

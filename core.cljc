@@ -73,7 +73,42 @@
                                                               :name (.-name e)})})))]
               (if (ex-data new-state)
                 [orig-state [(keeper rule-ins rule-outs data-cur new-state)]]
-              (recur new-state
-                     (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))
+                (recur new-state
+                       (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))
                        (into (rest rules) (mapcat second (select-keys rules-idx changed-queries))))))))))))
 
+(defn engine
+  "Creates zerol engine, calls fixpoint and once it's reached calls
+  all side effecting rules. Accept following optional key parameters:
+  - state - Initial state
+  - rules - List of rules
+  - keeper - Keeper function which manages how events got saved in history
+  - side-effects - Side effecting rules map where keys are queries and
+    values are function rules"
+  [& {:keys [state rules keeper side-effects]}]
+  (let [state (or state {})
+        rules (-> rules (or []) rules-index)
+        keeper (or keeper (partial vector 'T0))
+        side-effects (or side-effects {})
+        [new-state events] (fixpoint state rules [[]] keeper)
+        state-atom (atom {:state new-state :past events})]
+    (letfn [(event-emitter [effect-q effect-f]
+              (let [prev-state (:state @state-atom)]
+                (swap! state-atom
+                       (fn [state]
+                         (let [new-state (apply-effects state (hash-map effect-q effect-f))
+                               effects (filter #(not= (get-in prev-state (first %)) (get-in (:state new-state) (first %))) side-effects)]
+                           (apply-effects new-state effects))))))
+            (apply-effects [state effects]
+              (reduce (fn [acc [effect-k effect-f]]
+                        (let [[state-tmp events1] (fixpoint (:state acc) (rules-index [[effect-k effect-k (partial effect-f event-emitter)]])
+                                                            [effect-k]
+                                                            keeper)
+                              [new-state events2] (fixpoint state-tmp rules [effect-k] keeper)]
+                          (assoc acc
+                                 :state new-state
+                                 :past (concat events2 events1 (:past acc)))))
+                      state
+                      effects))]
+      (swap! state-atom apply-effects side-effects)
+      state-atom)))
