@@ -58,10 +58,22 @@
                                                               :query-out rule-outs}))))
               data-new (apply safe-f data-in)]
           (if (ex-data data-new)
-            [state [(keeper rule-ins rule-outs data-cur data-new)]]
+            [orig-state [(keeper rule-ins rule-outs data-cur data-new)]]
             (let [norm-data (zipmap rule-outs (cond-> data-new (= 1 (count rule-outs)) vector))
                   changed-queries (filter #(not= (get-in state %) (get-in norm-data [%])) rule-outs)
-                  new-state (reduce (fn[acc q] (update-in acc q (constantly (get-in norm-data [q])))) state changed-queries)]
+                  new-state (try (reduce (fn[acc q] (update-in acc q (constantly (get-in norm-data [q])))) state changed-queries)
+                                 (catch #?(:cljs js/Object :clj Exception) e
+                                   (ex-info "Error applying new data to existing state"
+                                            {:state state
+                                             :query changed-queries
+                                             :data norm-data
+                                             :error #?(:clj e
+                                                       :cljs {:message (.-message e)
+                                                              :stack (.-stack e)
+                                                              :name (.-name e)})})))]
+              (if (ex-data new-state)
+                [orig-state [(keeper rule-ins rule-outs data-cur new-state)]]
               (recur new-state
                      (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))
-                     (into (rest rules) (mapcat second (select-keys rules-idx changed-queries)))))))))))
+                       (into (rest rules) (mapcat second (select-keys rules-idx changed-queries))))))))))))
+
