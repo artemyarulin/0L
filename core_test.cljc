@@ -122,8 +122,33 @@
 
 #?(:clj (deftest engine-side-effects-initial
           (let [out (promise)]
-            (z/engine :state {:a 1} :side-effects {[:a] (fn[_ a] (deliver out a) a)})
+            (z/engine :state {:a 1}
+                      :side-effects {[:a] (fn[_ a] (deliver out a) a)})
             (is (= 1 @out))))
    :cljs (deftest engine-side-effects-initial
+           (cljs.test/async
+            done
+            (z/engine :state {:a 1}
+                      :side-effects {[:a] (fn[_ a] (is (= 1 a)) (done) a)}))))
+
+#?(:clj (deftest engine-side-effects-events
+          (let [out (promise)
+                state (z/engine :state {:a 1} :side-effects {[:a]
+                                                             (fn[event! a]
+                                                               (future
+                                                                 (Thread/sleep 1000)
+                                                                 (event! [:b] (constantly true))
+                                                                 (deliver out nil))
+                                                               a)})]
+            @out
+            (-> state deref :state (= {:a 1 :b true}) is)))
+   :cljs (deftest engine-side-effects-events
            (cljs.test/async done
-                  (z/engine :state {:a 1} :side-effects {[:a] (fn[_ a] (is (= 1 a)) (done) a)}))))
+                            (def state (z/engine :state {:a 1} :side-effects {[:a]
+                                                                              (fn[event! a]
+                                                                                (js/setTimeout (fn[]
+                                                                                                 (event! [:b] (constantly true))
+                                                                                                 (-> state deref :state (= {:a 1 :b true}) is)
+                                                                                                 (done))
+                                                                                               1000)
+                                                                                a)})))))
