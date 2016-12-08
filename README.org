@@ -3,6 +3,12 @@
 Research project about applying rule based systems into client side
 application
 
+** Status
+
+Early development, while engine works and most important concepts are
+defined the implementation itself is very bad and ugly. It's fine
+because most valuable thing are tests and use cases
+
 ** References
 
 *** Papers

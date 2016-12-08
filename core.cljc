@@ -1,5 +1,9 @@
 (ns zerol.core)
 
+;; WARNING: Your eyes may bleed if you start reading following code
+;; It's PoC and most valuable thing is not implementation code, but
+;; rather tests and usecases that I gather during development
+
 (defn rules-index
   "Creates index map of rules with {query [rules]} such that if query
   data has changed all possibly affected rules can be easily fetched
@@ -41,7 +45,13 @@
   [orig-state rules-idx queries keeper]
   (loop [state orig-state
          changes ()
-         rules (->> queries (select-keys rules-idx) (mapcat second))]
+         rules (->> queries (mapcat (fn[query]
+                                      (loop [query query]
+                                        (if-not query
+                                          []
+                                          (if-let [found (get rules-idx query)]
+                                            found
+                                            (recur (butlast query))))))))]
     (let [[rule-ins rule-outs f] (first rules)]
       (if-not f
         [state changes]
@@ -75,7 +85,13 @@
                 [orig-state [(keeper rule-ins rule-outs data-cur new-state)]]
                 (recur new-state
                        (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))
-                       (into (rest rules) (mapcat second (select-keys rules-idx changed-queries))))))))))))
+                       (into (rest rules) (->> changed-queries (mapcat (fn[query]
+                                                                         (loop [query query]
+                                                                           (if-not query
+                                                                             []
+                                                                             (if-let [found (get rules-idx query)]
+                                                                               found
+                                                                               (recur (butlast query))))))))))))))))))
 
 (defn default-keeper []
   (let [c (atom -1)]
@@ -93,28 +109,29 @@
     values are function rules"
   [& {:keys [state rules keeper side-effects]}]
   (let [state (or state {})
-        rules (-> rules (or []) rules-index)
+        pure-rules (-> rules (or []) rules-index)
+        all-rules (atom nil)
         keeper (or keeper (default-keeper))
         side-effects (or side-effects {})
-        [new-state events] (fixpoint state rules [[]] keeper)
-        state-atom (atom {:state new-state :past events})]
+        [new-state events] (fixpoint state pure-rules [[]] keeper)
+        world (atom {:state new-state :past events})]
     (letfn [(event-emitter [effect-q effect-f]
-              (let [prev-state (:state @state-atom)]
-                (swap! state-atom
-                       (fn [state]
-                         (let [new-state (apply-effects state (hash-map effect-q effect-f))
-                               effects (filter #(not= (get-in prev-state (first %)) (get-in (:state new-state) (first %))) side-effects)]
-                           (apply-effects new-state effects))))))
-            (apply-effects [state effects]
-              (reduce (fn [acc [effect-k effect-f]]
-                        (let [[state-tmp events1] (fixpoint (:state acc) (rules-index [[effect-k effect-k (partial effect-f event-emitter)]])
-                                                            [effect-k]
-                                                            keeper)
-                              [new-state events2] (fixpoint state-tmp rules [effect-k] keeper)]
-                          (assoc acc
-                                 :state new-state
-                                 :past (concat events2 events1 (:past acc)))))
-                      state
-                      effects))]
-      (swap! state-atom apply-effects side-effects)
-      state-atom)))
+              (let [prev-state (:state @world)]
+                (swap! world
+                       (fn [world]
+                         (let [[new-state changes] (fixpoint (:state world) (rules-index [[effect-q effect-q effect-f]]) [effect-q] keeper)
+                               [new-state2 changes2] (fixpoint new-state pure-rules [effect-q] keeper)
+                               effected-queries (filter #(not= (get-in prev-state %) (get-in new-state2 %)) (keys side-effects))]
+                           (apply-effects {:state new-state2
+                                           :past (concat changes2 changes (:past world))}
+                                          effected-queries))))))
+            (apply-effects [world queries]
+              (let [[new-state changes] (fixpoint (:state world) @all-rules queries keeper)]
+                {:state new-state
+                 :past (concat changes (:past world))}))]
+      (reset! all-rules (->> side-effects
+                             (mapv (fn[[q f]] [q q (partial f event-emitter)]))
+                             (into rules)
+                             rules-index))
+      (swap! world apply-effects (keys side-effects))
+      world)))

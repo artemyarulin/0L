@@ -72,7 +72,7 @@
     [{:a 1 :b 2} [[[[:a]] [:b] nil 2]]]
     [{:a 1} (z/rules-index [[[:a] [:b] inc]]) [[:a]] vector]
     ;; Chain
-    [{:a 1 :b 2 :c 3} [[[[:a]] [:b] nil 2] [[[:b]] [:c] nil 3]]]
+    [{:a 1 :b 2 :c 3} [[[[:b]] [:c] nil 3] [[[:a]] [:b] nil 2]]]
     [{:a 1} (z/rules-index [[[:a] [:b] inc] [[:b] [:c] inc]]) [[:a]] vector]))
 
 (deftest fixpoint-should-track-changed-queries
@@ -105,6 +105,14 @@
       (= {:a 1})
       is))
 
+(deftest fixpoint-dynamic-query
+  (is (= {:a {:b 3} :c {:b 3}}
+         (-> (z/fixpoint {:a {:b 3}}
+                     (z/rules-index [[[:a] [:c] identity]])
+                     [[:a :b]]
+                     vector)
+             first))))
+
 (deftest fixpoint-apply-change-error
   (let [init-state {:a 1 :c 'c}
         [state changes] (z/fixpoint init-state
@@ -118,7 +126,19 @@
   (-> (z/engine) deref (= {:state {} :past []}) is)
   (-> (z/engine :state {:a 1}) deref :state (= {:a 1}) is)
   (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc]]) deref :state (= {:a 1 :b 2}) is)
-  (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc]]) deref :past (= [['T0 [[:a]] [:b] nil 2]]) is))
+  (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc]]) deref :past (= [["T0" [[:a]] [:b] nil 2]]) is))
+
+(deftest engine-keeper-order
+  (-> (z/engine :state {:a 1}
+                :rules [[[:a] [:b] inc]
+                        [[:b] [:c] inc]]
+                :side-effects {[:c] (fn[_ c](cond-> c (odd? c) inc))})
+      deref
+      :past
+      (= '(["T2" [[:c]] [:c] 3 4]
+           ["T1" [[:b]] [:c] nil 3]
+           ["T0" [[:a]] [:b] nil 2]))
+      is))
 
 #?(:clj (deftest engine-side-effects-initial
           (let [out (promise)]
