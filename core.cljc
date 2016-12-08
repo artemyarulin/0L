@@ -40,7 +40,7 @@
   of changes piped through keeper"
   [orig-state rules-idx queries keeper]
   (loop [state orig-state
-         changes []
+         changes ()
          rules (->> queries (select-keys rules-idx) (mapcat second))]
     (let [[rule-ins rule-outs f] (first rules)]
       (if-not f
@@ -77,6 +77,12 @@
                        (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))
                        (into (rest rules) (mapcat second (select-keys rules-idx changed-queries))))))))))))
 
+(defn default-keeper []
+  (let [c (atom -1)]
+    (fn[q1 q2 v1 v2]
+      (swap! c inc)
+      [(str "T" @c) q1 q2 v1 v2])))
+
 (defn engine
   "Creates zerol engine, calls fixpoint and once it's reached calls
   all side effecting rules. Accept following optional key parameters:
@@ -88,7 +94,7 @@
   [& {:keys [state rules keeper side-effects]}]
   (let [state (or state {})
         rules (-> rules (or []) rules-index)
-        keeper (or keeper (partial vector 'T0))
+        keeper (or keeper (default-keeper))
         side-effects (or side-effects {})
         [new-state events] (fixpoint state rules [[]] keeper)
         state-atom (atom {:state new-state :past events})]
