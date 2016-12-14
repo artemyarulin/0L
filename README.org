@@ -15,6 +15,7 @@ because most valuable thing are tests and use cases
 - [[http://alumni.media.mit.edu/~jorkin/GOAP_draft_AIWisdom2_2003.pdf][Applying Goal-Oriented Action Planning to Games]]
 - [[http://web.stanford.edu/~ouster/cgi-bin/papers/rules-atc15][Experience with Rules-Based Programming for Distributed, Concurrent, Fault-Tolerant Code]]
 - [[http://www.ece.cmu.edu/~ece740/f11/lib/exe/fetch.php%3Fmedia%3Dwiki:lectures:onur-740-fall11-lecture24-prefetching-afterlecture.pdf][Computer Architecture Lecture 24: Prefetching]]
+- [[https://web.fe.up.pt/~apaiva/PhD/PhDGUITesting.pdf][Automated Specification-Based Testing of Graphical User Interfaces]]
 
 *** Articles
 - [[https://awelonblue.wordpress.com/2012/07/01/why-not-events/][Why not events]]
