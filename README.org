@@ -19,6 +19,7 @@ because most valuable thing are tests and use cases
 
 *** Articles
 - [[https://awelonblue.wordpress.com/2012/07/01/why-not-events/][Why not events]]
+- [[https://78462f86-a-fe558111-s-sites.googlegroups.com/a/harryrobinson.net/www/ExploratoryTestAutomation-CAST.pdf][Exploratory Test Automation Harry Robinson CAST 2010]]
 
 *** Books
 - [[http://www.amazon.com/Paradigms-Artificial-Intelligence-Programming-Studies/dp/1558601910][Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp]]
