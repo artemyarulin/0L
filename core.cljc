@@ -39,59 +39,61 @@
 
 (defn fixpoint
   "Given state, rules index, list of queries for data that may have
-  changed and a keeper function runs all possibly effected rules
-  recursivly untill fix point is reached. Returns new state and list
-  of changes piped through keeper"
-  [orig-state rules-idx queries keeper]
-  (loop [state orig-state
-         changes ()
-         rules (->> queries (mapcat (fn[query]
-                                      (loop [query query]
-                                        (if-not query
-                                          []
-                                          (if-let [found (get rules-idx query)]
-                                            found
-                                            (recur (butlast query))))))))]
-    (let [[rule-ins rule-outs f] (first rules)]
-      (if-not f
-        [state changes]
-        (let [data-in (map #(get-in state %) rule-ins)
-              data-cur (map #(get-in state %) rule-outs)
-              safe-f (fn[& args] (try (apply f args)
-                                     (catch #?(:cljs js/Object :clj Exception) e
-                                       (ex-info "Rule error" {:error #?(:clj e
-                                                                        :cljs {:message (.-message e)
-                                                                               :stack (.-stack e)
-                                                                               :name (.-name e)})
-                                                              :data args
-                                                              :query-in rule-ins
-                                                              :query-out rule-outs}))))
-              data-new (apply safe-f data-in)]
-          (if (ex-data data-new)
-            [orig-state [(keeper rule-ins rule-outs data-cur data-new)]]
-            (let [norm-data (zipmap rule-outs (cond-> data-new (= 1 (count rule-outs)) vector))
-                  changed-queries (filter #(not= (get-in state %) (get-in norm-data [%])) rule-outs)
-                  new-state (try (reduce (fn[acc q] (update-in acc q (constantly (get-in norm-data [q])))) state changed-queries)
-                                 (catch #?(:cljs js/Object :clj Exception) e
-                                   (ex-info "Error applying new data to existing state"
-                                            {:state state
-                                             :query changed-queries
-                                             :data norm-data
-                                             :error #?(:clj e
-                                                       :cljs {:message (.-message e)
-                                                              :stack (.-stack e)
-                                                              :name (.-name e)})})))]
-              (if (ex-data new-state)
-                [orig-state [(keeper rule-ins rule-outs data-cur new-state)]]
-                (recur new-state
-                       (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))
-                       (into (rest rules) (->> changed-queries (mapcat (fn[query]
-                                                                         (loop [query query]
-                                                                           (if-not query
-                                                                             []
-                                                                             (if-let [found (get rules-idx query)]
-                                                                               found
-                                                                               (recur (butlast query))))))))))))))))))
+  changed,keeper function and goal runs all possibly effected rules
+  recursivly untill fix point or goal is reached. Returns new state
+  and list of changes piped through keeper"
+  ([orig-state rules-idx queries keeper] (fixpoint orig-state rules-idx queries keeper [nil nil]))
+  ([orig-state rules-idx queries keeper [goal-query goal-f]]
+   (loop [state orig-state
+          changes ()
+          rules (->> queries (mapcat (fn[query]
+                                       (loop [query query]
+                                         (if-not query
+                                           []
+                                           (if-let [found (get rules-idx query)]
+                                             found
+                                             (recur (butlast query))))))))]
+     (let [[rule-ins rule-outs f] (first rules)
+           goal-reached (and goal-query goal-f (goal-f (get-in state [goal-query])))]
+       (if-not (and f (not goal-reached)) ;; TODO: Check goal only if corresponding query has changed
+         [state changes]
+         (let [data-in (map #(get-in state %) rule-ins)
+               data-cur (map #(get-in state %) rule-outs)
+               safe-f (fn[& args] (try (apply f args)
+                                      (catch #?(:cljs js/Object :clj Exception) e
+                                        (ex-info "Rule error" {:error #?(:clj e
+                                                                         :cljs {:message (.-message e)
+                                                                                :stack (.-stack e)
+                                                                                :name (.-name e)})
+                                                               :data args
+                                                               :query-in rule-ins
+                                                               :query-out rule-outs}))))
+               data-new (apply safe-f data-in)]
+           (if (ex-data data-new)
+             [orig-state [(keeper rule-ins rule-outs data-cur data-new)]]
+             (let [norm-data (zipmap rule-outs (cond-> data-new (= 1 (count rule-outs)) vector))
+                   changed-queries (filter #(not= (get-in state %) (get-in norm-data [%])) rule-outs)
+                   new-state (try (reduce (fn[acc q] (update-in acc q (constantly (get-in norm-data [q])))) state changed-queries)
+                                  (catch #?(:cljs js/Object :clj Exception) e
+                                    (ex-info "Error applying new data to existing state"
+                                             {:state state
+                                              :query changed-queries
+                                              :data norm-data
+                                              :error #?(:clj e
+                                                        :cljs {:message (.-message e)
+                                                               :stack (.-stack e)
+                                                               :name (.-name e)})})))]
+               (if (ex-data new-state)
+                 [orig-state [(keeper rule-ins rule-outs data-cur new-state)]]
+                 (recur new-state
+                        (into changes (map #(keeper rule-ins % (get-in state %) (get-in new-state %)) changed-queries))
+                        (into (rest rules) (->> changed-queries (mapcat (fn[query]
+                                                                          (loop [query query]
+                                                                            (if-not query
+                                                                              []
+                                                                              (if-let [found (get rules-idx query)]
+                                                                                found
+                                                                                (recur (butlast query)))))))))))))))))))
 
 (defn default-keeper []
   (let [c (atom -1)]
@@ -106,27 +108,29 @@
   - rules - List of rules
   - keeper - Keeper function which manages how events got saved in history
   - side-effects - Side effecting rules map where keys are queries and
-    values are function rules"
-  [& {:keys [state rules keeper side-effects]}]
+    values are function rules
+  - goal - pair of query and a function from query data. If function returns true - engine stops"
+  [& {:keys [state rules keeper side-effects goal]}]
   (let [state (or state {})
+        goal (or goal [nil nil])
         pure-rules (-> rules (or []) rules-index)
         all-rules (atom nil)
         keeper (or keeper (default-keeper))
         side-effects (or side-effects {})
-        [new-state events] (fixpoint state pure-rules [[]] keeper)
+        [new-state events] (fixpoint state pure-rules [[]] keeper goal)
         world (atom {:state new-state :past events})]
     (letfn [(event-emitter [effect-q effect-f]
               (let [prev-state (:state @world)]
                 (swap! world
                        (fn [world]
-                         (let [[new-state changes] (fixpoint (:state world) (rules-index [[effect-q effect-q effect-f]]) [effect-q] keeper)
-                               [new-state2 changes2] (fixpoint new-state pure-rules [effect-q] keeper)
+                         (let [[new-state changes] (fixpoint (:state world) (rules-index [[effect-q effect-q effect-f]]) [effect-q] keeper goal)
+                               [new-state2 changes2] (fixpoint new-state pure-rules [effect-q] keeper goal)
                                effected-queries (filter #(not= (get-in prev-state %) (get-in new-state2 %)) (keys side-effects))]
                            (apply-effects {:state new-state2
                                            :past (concat changes2 changes (:past world))}
                                           effected-queries))))))
             (apply-effects [world queries]
-              (let [[new-state changes] (fixpoint (:state world) @all-rules queries keeper)]
+              (let [[new-state changes] (fixpoint (:state world) @all-rules queries keeper goal)]
                 {:state new-state
                  :past (concat changes (:past world))}))]
       (reset! all-rules (->> side-effects
