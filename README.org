@@ -20,6 +20,7 @@ because most valuable thing are tests and use cases
 *** Articles
 - [[https://awelonblue.wordpress.com/2012/07/01/why-not-events/][Why not events]]
 - [[https://78462f86-a-fe558111-s-sites.googlegroups.com/a/harryrobinson.net/www/ExploratoryTestAutomation-CAST.pdf][Exploratory Test Automation Harry Robinson CAST 2010]]
+- [[http://0b4af6cdc2f0c5998459-c0245c5c937c5dedcca3f1764ecc9b2f.r43.cf2.rackcdn.com/9353-login1210_khurana.pdf][Introduction to hbase Schema Design]]
 
 *** Books
 - [[http://www.amazon.com/Paradigms-Artificial-Intelligence-Programming-Studies/dp/1558601910][Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp]]
@@ -86,3 +87,88 @@ Because:
   testing for REPL. More awesome idea - take existing point in history
   and branch there. Use case: App did IO and rendered it. What-if
   server returned different data?
+
+- How tests can be invented automatically?
+
+- Example test:
+  - Run app
+  - Start writing new msg to another account
+  - Fill message details
+  - No internet
+  - Press send
+  - Message put in sending queue
+  - Internet appears
+  - Message sent
+  - Another account receives message
+
+- How to create such test? We should have possible events for any given state on any moment T
+- How to check that test is passed?
+- How to check that test is failed?
+- How to shrink test? We could start from smallest number os steps. Or go from end looking for first opportunity to exec such event
+- How to store test in order to keep us from regression? It's data first of all, we get it for free
+
+nil #{:run-app-new :run-app-saved-session :run-app-second-run} => :run-app-saved-session
+app-runs {:check-messages :message-click :delete-message :mark-message :new-message :app-no-inet} => :new-message
+app-runs-new-message {:close :send :fill-to :fill-subject :fill-body :app-no-inet} => :fill-to
+app-runs-new-message {:close :send :fill-to :fill-subject :fill-body :app-no-inet} => :app-no-inet
+app-runs-new-message {:close :send :fill-to :fill-subject :fill-body :app-inet} => :send
+app-runs {:check-messages :message-click :delete-message :mark-message :new-message :app-inet} => :app-inet
+
+EVENT => local state change -> [IO -> local state change -> remote state change]
+
+== SPECIFICATION
+:EVENT-FILL-DATA => dataFilled ^:valid? true
+:EVENT-LOGIN => isLoading -> io.http.login -> close      -> []
+:EVENT-LOGIN => isLoading -> io.http.login -> errMessage -> []
+
+:EVENT-SEND  => isSanding -> io.http.send  -> close      -> [message in sender sent folder; message in receiver inbox folder]
+:EVENT-SEND  => erSending -> []            -> []         -> []
+
+
+;; GENERATE THOSE?
+
+
+authenticate => {:valid-user :valid-pwd :valid-url} => {:account [:email :pwd :ews-url]}
+authenticate => {:valid-user :invalid-pwd :valid-url} => {:err [:password-wrong]}
+authenticate => {:valid-user :valid-pwd :invalid-url} => {:err [:invalid-server]}
+authenticate => {:valid-user :valid-owd :valid-url :NO-INET} => {:err [:cannot-connect]}
+authenticate => {:valid-user :valid-owd :valid-url :TIMEOUT} => {:err [:timeout]}
+
+sendMsg => {:to-same-server :subject :body}
+
+
+                                                               => INSTANT       => EVENTUALLY           => EVENTUALLY                     => EVENTUALLY
+|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
+| model         | event                                         | local change         | IO                    | local change                    | remote change                 |
+|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
+| authenticate  | {:auth? ::valid-user ::valid-pwd ::valid-url} | :loading?            | :io.http.authenticate | :account {:email :pwd :ews-url} | -                             |
+| delMsg        | {:del? ::msgID}                               | (non? ::msgID)       | :io.http.delete       | -                               | #remote(non? ::msgID)         |
+| sendMsg       | {:send? ::user-to ::subject ::body}           | :sending?            | :io.http.send         | (not :sending?)                 | #remote(has ::body ::sibject) |
+| markMsg       | {:mark ::msgID ::read?}                       | :read?               | :io.http.mark         | -                               | #remote(::msgID :read?)       |
+| newMsg        | {:new?}                                       | (empty :subject :to) |                       |                                 |                               |
+| newMsg        | {:new? :subject :to}                          | {:subject :to}       |                       |                                 |                               |
+|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
+| ab-inc        | {:a}                                          | :b = (inc :a)        | -                     | -                               | -                             |
+| 42-divver-ok  | ::non-zero                                    | :b = (/ 42 :a)       |                       |                                 |                               |
+| 42-divver-err | ::zero                                        | :b = (ex-info)       | -                     | -                               | -                             |
+|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
+
+
+[:a :b inc]
+иК
+
+
+:value (s/or ::valid-integer ::invalid-non-integer)
+:op ::valid-op
+:result (s/pr ::valid-result ::error-result)
+
+{:calc? ::value ::value ::op}  => :result
+{:calc? ::invalid-non-integer ::value :op} => :error-result
+{:calc? ::value ::invalid-non-integer :op} => :error-result
+{:calc? ::value ::value :+} =>
+
+
+0 1 <= r
+-100 -200 < -300
+
+(+ -100 -200)
