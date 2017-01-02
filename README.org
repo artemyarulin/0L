@@ -3,12 +3,6 @@
 Research project about applying rule based systems into client side
 application
 
-** Status
-
-Early development, while engine works and most important concepts are
-defined the implementation itself is very bad and ugly. It's fine
-because most valuable thing are tests and use cases
-
 ** References
 
 *** Papers
@@ -21,6 +15,7 @@ because most valuable thing are tests and use cases
 - [[https://awelonblue.wordpress.com/2012/07/01/why-not-events/][Why not events]]
 - [[https://78462f86-a-fe558111-s-sites.googlegroups.com/a/harryrobinson.net/www/ExploratoryTestAutomation-CAST.pdf][Exploratory Test Automation Harry Robinson CAST 2010]]
 - [[http://0b4af6cdc2f0c5998459-c0245c5c937c5dedcca3f1764ecc9b2f.r43.cf2.rackcdn.com/9353-login1210_khurana.pdf][Introduction to hbase Schema Design]]
+- [[http://techblog.procurios.nl/k/news/view/34441/14863/semantic-web-marvels-in-a-relational-database-part-ii-comparing-alternatives.html][Semantic web marvels in a relational database - part II: Comparing alternatives]]
 
 *** Books
 - [[http://www.amazon.com/Paradigms-Artificial-Intelligence-Programming-Studies/dp/1558601910][Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp]]
@@ -36,20 +31,9 @@ because most valuable thing are tests and use cases
 - [[https://github.com/reactjs/redux][redux]] - almost perfect solution, used as a starting point
 - [[https://github.com/artemyarulin/om-next-ios-pure][om-next-ios-pure]] - previous attempt to solve the issue without actually thinking about it
 
+
 ** Questions & ideas
 
-- Proposal for standartisation of IO:
-
-#+BEGIN_SRC clojure
-{:type :http
- :error (ex-info "Some message" {:add-param1 "add-param-value1"})
- :options io-options
- :success {:status 200 :headers {} :body "Something"}
- :status [nil | :progress | :error | :success]
- :cancel (fn[])}
-#+END_SRC
-
-- In case of a crash - what should we do?
 - Zerol should be answer WHY it did something
 - Zerol should have a notion of time. Without it wouldn't be able to
   answer ~WHY~ quesiont and make cache invalidation
@@ -87,9 +71,7 @@ Because:
   testing for REPL. More awesome idea - take existing point in history
   and branch there. Use case: App did IO and rendered it. What-if
   server returned different data?
-
 - How tests can be invented automatically?
-
 - Example test:
   - Run app
   - Start writing new msg to another account
@@ -100,44 +82,14 @@ Because:
   - Internet appears
   - Message sent
   - Another account receives message
-
 - How to create such test? We should have possible events for any given state on any moment T
 - How to check that test is passed?
 - How to check that test is failed?
 - How to shrink test? We could start from smallest number os steps. Or go from end looking for first opportunity to exec such event
 - How to store test in order to keep us from regression? It's data first of all, we get it for free
 
-nil #{:run-app-new :run-app-saved-session :run-app-second-run} => :run-app-saved-session
-app-runs {:check-messages :message-click :delete-message :mark-message :new-message :app-no-inet} => :new-message
-app-runs-new-message {:close :send :fill-to :fill-subject :fill-body :app-no-inet} => :fill-to
-app-runs-new-message {:close :send :fill-to :fill-subject :fill-body :app-no-inet} => :app-no-inet
-app-runs-new-message {:close :send :fill-to :fill-subject :fill-body :app-inet} => :send
-app-runs {:check-messages :message-click :delete-message :mark-message :new-message :app-inet} => :app-inet
-
-EVENT => local state change -> [IO -> local state change -> remote state change]
-
-== SPECIFICATION
-:EVENT-FILL-DATA => dataFilled ^:valid? true
-:EVENT-LOGIN => isLoading -> io.http.login -> close      -> []
-:EVENT-LOGIN => isLoading -> io.http.login -> errMessage -> []
-
-:EVENT-SEND  => isSanding -> io.http.send  -> close      -> [message in sender sent folder; message in receiver inbox folder]
-:EVENT-SEND  => erSending -> []            -> []         -> []
-
-
-;; GENERATE THOSE?
-
-
-authenticate => {:valid-user :valid-pwd :valid-url} => {:account [:email :pwd :ews-url]}
-authenticate => {:valid-user :invalid-pwd :valid-url} => {:err [:password-wrong]}
-authenticate => {:valid-user :valid-pwd :invalid-url} => {:err [:invalid-server]}
-authenticate => {:valid-user :valid-owd :valid-url :NO-INET} => {:err [:cannot-connect]}
-authenticate => {:valid-user :valid-owd :valid-url :TIMEOUT} => {:err [:timeout]}
-
-sendMsg => {:to-same-server :subject :body}
-
-
-                                                               => INSTANT       => EVENTUALLY           => EVENTUALLY                     => EVENTUALLY
+|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
+|               |                                               | INSTANT              | EVENTUALLY            | EVENTUALLY                      | EVENTUALLY                    |
 |---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
 | model         | event                                         | local change         | IO                    | local change                    | remote change                 |
 |---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
@@ -153,22 +105,4 @@ sendMsg => {:to-same-server :subject :body}
 | 42-divver-err | ::zero                                        | :b = (ex-info)       | -                     | -                               | -                             |
 |---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
 
-
-[:a :b inc]
-иК
-
-
-:value (s/or ::valid-integer ::invalid-non-integer)
-:op ::valid-op
-:result (s/pr ::valid-result ::error-result)
-
-{:calc? ::value ::value ::op}  => :result
-{:calc? ::invalid-non-integer ::value :op} => :error-result
-{:calc? ::value ::invalid-non-integer :op} => :error-result
-{:calc? ::value ::value :+} =>
-
-
-0 1 <= r
--100 -200 < -300
-
-(+ -100 -200)
+- How to store arrays? ~[:message/to 1] [1 2 3]~
