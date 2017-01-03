@@ -172,3 +172,8 @@
                                                                                                  (done))
                                                                                                1000)
                                                                                 a)})))))
+(deftest goal-test
+  (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc]] :goal [:a (comp not nil?)])
+      deref :state (= {:a 1}) is)
+  (-> (z/engine :state {:a 1} :rules [[[:a] [:b] inc] [[:b] [:c] inc]] :goal [:b (comp not nil?)])
+      deref :state (= {:a 1 :b 2}) is))
