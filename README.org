@@ -1,7 +1,32 @@
-* zerol - user interface rule based engine
+* zerol
 
-Research project about applying rule based systems into client side
-application
+Research project about inventing new type of state container where
+everything (including IO and rendering) is represented as data and
+processed by rule based engine
+
+** What
+
+- Explicit intermediate state
+- Controlled IO
+- Automatic error handling/propagation
+- Automatic test generation
+- Should be able to answer WHY certain thing had happened
+- Should be able to answer WHAT-IF certain thing would happen differently
+- Should be able to answer WHAT COULD happen next on any given moment
+
+** How
+
+- One global EAV data storage
+- Clojure.spec support
+- Model driven development
+- IO represented as data
+- Notion of time/data age
+- Model driven development to generate acceptance tests
+- f(state) -> [possible events] for generating test explorers
+
+** Status
+
+Gathering requirements, first ideas of what it could become
 
 ** References
 
@@ -21,88 +46,11 @@ application
 - [[http://www.amazon.com/Paradigms-Artificial-Intelligence-Programming-Studies/dp/1558601910][Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp]]
 
 *** Talks
-- [[https://www.youtube.com/watch?v=ajX09xQ_UEg][Game development development]] - dependency graph looks relly nice
-- [[https://www.youtube.com/watch?v=5V1ynVyud4M][Eve]] - normalized data;IO as data;rules, many similarities
-- [[https://www.youtube.com/watch?v=R2Aa4PivG0g][I See What You Mean]] - logic rules, notion of time
+- [[https://www.youtube.com/watch?v=ajX09xQ_UEg][Game development development]]
+- [[https://www.youtube.com/watch?v=5V1ynVyud4M][Eve]]
+- [[https://www.youtube.com/watch?v=R2Aa4PivG0g][I See What You Mean]]
 
 *** Projects
-- [[https://www.haskell.org][Haskell]] - for teaching me that IO has to be handled carefully
-- [[https://github.com/omcljs/om][om-next]] - components queries is great idea
-- [[https://github.com/reactjs/redux][redux]] - almost perfect solution, used as a starting point
-- [[https://github.com/artemyarulin/om-next-ios-pure][om-next-ios-pure]] - previous attempt to solve the issue without actually thinking about it
-
-
-** Questions & ideas
-
-- Zerol should be answer WHY it did something
-- Zerol should have a notion of time. Without it wouldn't be able to
-  answer ~WHY~ quesiont and make cache invalidation
-
-  - Rough idea - new root key ~time~ which would look like:
-#+BEGIN_SRC clojure
-
-{:hystory [[where why what prev]
-          [T1 query-caused-change query-changed prev-value]]}
-
-;; where/T1,T2...TN - Where new value appeared. It could be point in time (simple timestamp) or more complex location like [session-id,remote,timestamp]
-;; why/query-caused-change - WHY something got changed, what caused that
-;; what/query-changed - WHAT got changed
-;; prev/prev-data-value - Previous query value
-
-;; Example with counter
-
-{:time (['T3 [:ui :button :click?] [:data :counter] 8]
-        ['T2 [:ui :button :click?] [:data :counter] 7]
-        ['T1 [:ui :button :click?] [:data :counter] 6]
-        ['T0 [] [] {:data {:counter 5} :ui {:button {:click? false}}}]]}
-
-;; Now we can ask why questions
-
-> (why [:data :counter])
-Because:
- 'T3 [:ui :button :click?] changed it from 7 to 8
- 'T2 [:ui :button :click?] changed it from 6 to 7
- 'T1 [:ui :button :click?] changed it from 5 to 6
- 'T0 initialized it with 5
-
-#+END_SRC
-- Like Datomic we should be able to ask ~what-if~ question, meaning do
-  temp change on state following by render. It will help during manual
-  testing for REPL. More awesome idea - take existing point in history
-  and branch there. Use case: App did IO and rendered it. What-if
-  server returned different data?
-- How tests can be invented automatically?
-- Example test:
-  - Run app
-  - Start writing new msg to another account
-  - Fill message details
-  - No internet
-  - Press send
-  - Message put in sending queue
-  - Internet appears
-  - Message sent
-  - Another account receives message
-- How to create such test? We should have possible events for any given state on any moment T
-- How to check that test is passed?
-- How to check that test is failed?
-- How to shrink test? We could start from smallest number os steps. Or go from end looking for first opportunity to exec such event
-- How to store test in order to keep us from regression? It's data first of all, we get it for free
-
-|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
-|               |                                               | INSTANT              | EVENTUALLY            | EVENTUALLY                      | EVENTUALLY                    |
-|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
-| model         | event                                         | local change         | IO                    | local change                    | remote change                 |
-|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
-| authenticate  | {:auth? ::valid-user ::valid-pwd ::valid-url} | :loading?            | :io.http.authenticate | :account {:email :pwd :ews-url} | -                             |
-| delMsg        | {:del? ::msgID}                               | (non? ::msgID)       | :io.http.delete       | -                               | #remote(non? ::msgID)         |
-| sendMsg       | {:send? ::user-to ::subject ::body}           | :sending?            | :io.http.send         | (not :sending?)                 | #remote(has ::body ::sibject) |
-| markMsg       | {:mark ::msgID ::read?}                       | :read?               | :io.http.mark         | -                               | #remote(::msgID :read?)       |
-| newMsg        | {:new?}                                       | (empty :subject :to) |                       |                                 |                               |
-| newMsg        | {:new? :subject :to}                          | {:subject :to}       |                       |                                 |                               |
-|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
-| ab-inc        | {:a}                                          | :b = (inc :a)        | -                     | -                               | -                             |
-| 42-divver-ok  | ::non-zero                                    | :b = (/ 42 :a)       |                       |                                 |                               |
-| 42-divver-err | ::zero                                        | :b = (ex-info)       | -                     | -                               | -                             |
-|---------------+-----------------------------------------------+----------------------+-----------------------+---------------------------------+-------------------------------|
-
-- How to store arrays? ~[:message/to 1] [1 2 3]~
+- [[https://www.haskell.org][Haskell]]
+- [[https://github.com/omcljs/om][om-next]]
+- [[https://github.com/reactjs/redux][redux]]
