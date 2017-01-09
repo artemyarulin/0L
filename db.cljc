@@ -79,3 +79,12 @@
                                                (query-joins db query ids)
                                                (query-attrs db query ids))]
           (recur new-query (concat data new-data) new-ids))))))
+
+(defn save [db data]
+  (reduce (fn[[db changes] [k v]]
+            (cond
+              (and (nil? v) (get db k))   [(dissoc db k)  (conj changes [k v])]
+              (and v (nil? (get db k)))   [(assoc db k v) (conj changes [k v])]
+              (and v (not= v (get db k))) [(assoc db k v) (conj changes [k v])]
+              :else [db changes]))
+          [db []] data))

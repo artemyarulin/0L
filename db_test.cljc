@@ -66,3 +66,34 @@
     (is (= [{:person/id 1 :person/name "Sam" :person/friend {:person/id 2 :person/name "Jim"}}
             {:person/id 2 :person/name "Jim" :person/friend {:person/id 1 :person/name "Sam"}}]
            (db/query test-db [:person/name {:person/friend [:person/name]}])))))
+
+(deftest save
+  (testing "No new data"
+    (is (= [test-db []]
+           (db/save test-db [[[:person/age 1] 23]]))))
+  (testing "New data"
+    (let [prop [[:person/height 1] 177]]
+      (is (= [(assoc test-db (first prop) (second prop)) [prop]]
+             (db/save test-db [prop])))))
+  (testing "Changed data"
+    (let [prop [[:person/age 1] 100]]
+      (is (= [(assoc test-db (first prop) (second prop)) [prop]]
+             (db/save test-db [prop])))))
+  (testing "Remove existing data"
+    (let [prop [[:person/age 1] nil]]
+      (is (= [(dissoc test-db (first prop)) [prop]]
+             (db/save test-db [prop])))))
+  (testing "Remove missing data"
+    (let [prop [[:person/height 1] nil]]
+      (is (= [test-db []]
+             (db/save test-db [prop])))))
+  (testing "Add/change/remove"
+    (let [prop-add [[:person/height 2] 23]
+          prop-change [[:person/name 1] "Yo"]
+          prop-remove [[:person/age 2] nil]]
+      (is (= [(-> test-db
+                  (assoc (first prop-add) (second prop-add))
+                  (assoc (first prop-change) (second prop-change))
+                  (dissoc (first prop-remove)))
+              [prop-add prop-change prop-remove]]
+             (db/save test-db [prop-add prop-change prop-remove]))))))
