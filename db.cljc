@@ -24,8 +24,8 @@
      (get tokens false)]))
 
 (defn find-attribute [db attr ids]
-  (let [min-idx #?(:clj Integer/MIN_VALUE :cljs js/Number.MIN_VALUE)
-        max-idx #?(:clj Integer/MAX_VALUE :cljs js/Number.MAX_VALUE)]
+  (let [min-idx -2147483648
+        max-idx  2147483647]
     (if (nil? ids)
       (subseq db >= [attr min-idx] <= [attr max-idx])
       (select-keys db (map #(vector attr %) ids)))))
