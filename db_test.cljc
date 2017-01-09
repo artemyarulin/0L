@@ -21,6 +21,13 @@
                            [:person/company 2] [:company/id 2]
                            [:company/team 1] [[:person/id 1] [:person/id 2]]}))
 
+(deftest find-attribute-neg-ids
+  (is (= [[[:a/b -1] :a] [[:a/b 10] :b]]
+         (db/find-attribute (db/map->eav {[:a/b -1] :a
+                                          [:a/b 10] :b})
+                            :a/b
+                            nil))))
+
 (deftest query
   (testing "One prop"
     (is (= [#:person{:name "Sam" :id 1}
