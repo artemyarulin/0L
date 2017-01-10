@@ -2,37 +2,56 @@
   (:require [clojure.test :refer [is are deftest testing]]
             [zerol.db :as db]))
 
-(deftest from-map
-  (is (= {:a 1 :b 2}
-         (db/map->eav {:b 2 :a 1}))))
+(deftest eav->map
+  (is (= [#:customer {:name "Joe" :age 22 :id 1}]
+         (db/eav->map [[[1742966319 1843675177 1] "Joe"]
+                       [[1742966319 -604307804 1] 22]]
+                      {1742966319 :customer
+                       1843675177 :name
+                       -604307804 :age}))))
 
-(def test-db (db/map->eav {[:person/identity 1] 42
-                           [:person/name 1] "Sam"
-                           [:person/on? 1] true
-                           [:person/age 1] 23
-                           [:person/friend 1] [:person/id 2]
-                           [:person/name 2] "Jim"
-                           [:person/on? 2] false
-                           [:person/age 2] 88
-                           [:person/friend 2] [:person/id 1]
-                           [:company/name 1] "Co#1"
-                           [:company/name 2] "Co#2"
-                           [:person/company 1] [:company/id 1]
-                           [:person/company 2] [:company/id 2]
-                           [:company/team 1] [[:person/id 1] [:person/id 2]]}))
+(deftest map->eav
+  (is (= [{[-1059806875 1843675177 1] "Joe"}
+          {-1059806875 :person
+           1843675177 :name}]
+         (db/map->eav #:person {:id 1 :name "Joe"}))))
 
-(deftest find-attribute-neg-ids
-  (is (= [[[:a/b -1] :a] [[:a/b 10] :b]]
-         (db/find-attribute (db/map->eav {[:a/b -1] :a
-                                          [:a/b 10] :b})
-                            :a/b
-                            nil))))
+(deftest maps->db
+  (is (= {[-1059806875 1843675177 22] "Joe"
+          [-1059806875 1843675177 33] "Jim"
+          [] {-1059806875 :person
+              1843675177 :name}}
+         (db/maps->db #:person {:name "Joe" :id 22}
+                      #:person {:name "Jim" :id 33}))))
+
+(deftest find-attr
+  (let [db (db/maps->db #:a {:id -1 :b "b1"}
+                        #:a {:id 10 :b "b2"})]
+    (is (= [[[-2123407586 1482224470 -1] "b1"]
+            [[-2123407586 1482224470 10] "b2"]]
+           (db/find-attr db :a :b nil)))
+    (is (= [[[-2123407586 1482224470 10] "b2"]]
+           (db/find-attr db :a :b [10])))))
+
+(deftest find-entities
+  (let [db (db/maps->db #:person {:age 22 :id 22}
+                        #:person {:age 33 :id 33})]
+    (is (= [33]
+           (db/find-entities db [[-1059806875 -604307804 33]])))
+    (is (= [22 33]
+           (db/find-entities db [[-1059806875 -604307804 pos?]])))))
+
+(def test-db (db/maps->db
+              #:person {:id 1 :name "Sam" :age 23 :identity 42 :on? true :friend [:person/id 2]}
+              #:person {:id 2 :name "Jim" :age 88 :friend [:person/id 1]}
+              #:company {:id 1 :name "Co#1" :team [[:person/id 1] [:person/id 2]]}
+              #:company {:id 2 :name "Co#2" :site "http://example.com"}))
 
 (deftest query
   (testing "One prop"
     (is (= [#:person{:name "Sam" :id 1}
             #:person{:name "Jim" :id 2}]
-           (db/query test-db [:person/name]))))
+           (db/query test-db [:person/name :person/id]))))
   (testing "Many props"
     (is (= [#:person{:name "Sam" :age 23 :id 1}
             #:person{:name "Jim" :age 88 :id 2}]
@@ -73,15 +92,17 @@
            (db/save test-db [[[:person/age 1] 23]]))))
   (testing "New data"
     (let [prop [[:person/height 1] 177]]
-      (is (= [(assoc test-db (first prop) (second prop)) [prop]]
+      (is (= [(update (assoc test-db [(hash :person) (hash :height) 1] 177)
+                      []
+                      merge {(hash :height) :height}) [prop]]
              (db/save test-db [prop])))))
   (testing "Changed data"
     (let [prop [[:person/age 1] 100]]
-      (is (= [(assoc test-db (first prop) (second prop)) [prop]]
+      (is (= [(assoc test-db [(hash :person) (hash :age) 1] (second prop)) [prop]]
              (db/save test-db [prop])))))
   (testing "Remove existing data"
     (let [prop [[:person/age 1] nil]]
-      (is (= [(dissoc test-db (first prop)) [prop]]
+      (is (= [(dissoc test-db [(hash :person) (hash :age) 1]) [prop]]
              (db/save test-db [prop])))))
   (testing "Remove missing data"
     (let [prop [[:person/height 1] nil]]
@@ -92,8 +113,9 @@
           prop-change [[:person/name 1] "Yo"]
           prop-remove [[:person/age 2] nil]]
       (is (= [(-> test-db
-                  (assoc (first prop-add) (second prop-add))
-                  (assoc (first prop-change) (second prop-change))
-                  (dissoc (first prop-remove)))
+                  (assoc [(hash :person) (hash :height) 2] (second prop-add))
+                  (assoc [(hash :person) (hash :name) 1] (second prop-change))
+                  (dissoc [(hash :person) (hash :age) 2])
+                  (update [] merge {(hash :height) :height}))
               [prop-add prop-change prop-remove]]
              (db/save test-db [prop-add prop-change prop-remove]))))))
