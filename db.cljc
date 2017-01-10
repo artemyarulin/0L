@@ -1,5 +1,7 @@
 (ns zerol.db)
 
+(def min-id -2147483648)
+(def max-id  2147483647)
 (defn third [l] (nth l 2))
 
 (defn map->eav [m]
@@ -45,9 +47,7 @@
      (get tokens false)]))
 
 (defn find-attr [db entity attr ids]
-  (let [min-id -2147483648
-        max-id  2147483647
-        entity-hash (cond-> entity (keyword? entity) hash)
+  (let [entity-hash (cond-> entity (keyword? entity) hash)
         attr-hash (cond-> attr (keyword? attr) hash)]
     (if (nil? ids)
       (subseq db
@@ -137,3 +137,11 @@
                                                     (conj changes [[prop id] v])]
                 :else [db changes])))
           [db []] data))
+
+(defn drop-entity [db entity id]
+  (->> (subseq db
+               >= [(hash entity) min-id id]
+               <= [(hash entity) max-id id])
+       (filter #(-> % first third (= id)))
+       (map first)
+       (apply (partial dissoc db))))

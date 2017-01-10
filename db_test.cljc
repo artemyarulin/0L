@@ -119,3 +119,12 @@
                   (update [] merge {(hash :height) :height}))
               [prop-add prop-change prop-remove]]
              (db/save test-db [prop-add prop-change prop-remove]))))))
+
+(deftest drop-entity
+  (is (= (reduce (fn[acc [k v]]
+                   (if (and (= (hash :person) (first k))
+                            (= (last k) 1))
+                     acc
+                     (assoc acc k v)))
+                 {} test-db)
+         (db/drop-entity test-db :person 1))))
