@@ -6,32 +6,44 @@ fun anycase
 
 ** What
 
+- Model driven development - everything start with model and model rules
 - Should be able to answer WHY certain thing had happened
 - Should be able to answer WHAT-IF certain thing would happen differently
 - Should be able to answer WHAT COULD happen next on any given moment
 - Continious development - change code and see how app behaviour has
   changed comparing to previous version
 - Logs/monitoring/contract validation from the box
-- Alternative rules - there are many cases where certain things could
-  be acheived via multiple ways
 
 ** How
 
-- Automatic test generation
+- Automatic unit (pure) test generation from model
+- Automatic integration (with IO) test generation from model
+- Automatic UI test generation from model
+- Automatic test expolers generation by using ~f(state) -> [possible events]~
 - Automatic error handling/propagation
 - Controlled IO, which is represented as data
-- One global EAV data storage.  has
+- One global EAV data storage
 - Explicit intermediate state
-- Model driven development
 - Notion of time/data age
-- Model driven development to generate acceptance tests
-- f(state) -> [possible events] for generating test explorers
 - Monitoring data is application heartbit
 - Moniroting data is test data
 
 ** Status
 
-Gathering requirements, first ideas of what it could become
+**** First failed attempt - CLJS + om-next
+
+Didn't work as Om has their own way of working which has almost no
+connection with my goals.
+
+**** Second failed attempt - CLJS + custom EAV database + rule engine + clojure.spec
+
+Didn't work as biggest part of data model verification is (surpise!)
+type system. It could be acheived with dynamic ClojureScript and
+clojure.spec, but requires extra work
+
+**** Current (not failed yet) attempt - PureScript + custom DB + rule engine + modeling DSL + JS renderer
+
+Status - hammock time, still figuring out what I actually want
 
 ** References
 
